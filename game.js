@@ -52,8 +52,8 @@ const GUARD_SPIRIT_RATE = 0.45
 
 const LEVELS = [
   {
-    name: "Man 1 - Sunken Gate",
-    objective: "Gom tinh the va chay den cong sang",
+    name: "Màn 1 - Cổng Chìm",
+    objective: "Thu thập tinh thể và chạy đến cổng sáng",
     palette: {
       skyTop: "#abdfff",
       skyBottom: "#ffe4a8",
@@ -82,8 +82,8 @@ const LEVELS = [
     ]
   },
   {
-    name: "Man 2 - Ember Crossing",
-    objective: "Vuot qua doan lua va mo cong thu hai",
+    name: "Màn 2 - Vượt Ải Than Hồng",
+    objective: "Vượt qua đoạn lửa và mở cổng thứ hai",
     palette: {
       skyTop: "#7d8fff",
       skyBottom: "#ffd6a1",
@@ -112,8 +112,8 @@ const LEVELS = [
     ]
   },
   {
-    name: "Man 3 - Core Citadel",
-    objective: "Danh bai Guardian Core",
+    name: "Màn 3 - Pháo Đài Lõi",
+    objective: "Đánh bại Lõi Hộ Vệ",
     palette: {
       skyTop: "#4b5683",
       skyBottom: "#d47964",
@@ -123,7 +123,7 @@ const LEVELS = [
       tileSide: "#4d424a"
     },
     boss: {
-      name: "Guardian Core",
+      name: "Lõi Hộ Vệ",
       maxHealth: 260,
       x: 35,
       y: 6
@@ -165,7 +165,7 @@ const state = {
   lastTime: 0,
   screenShake: 0,
   status: {
-    text: "San sang vao tan tich",
+    text: "Sẵn sàng vào tàn tích",
     hold: 0
   }
 }
@@ -249,7 +249,7 @@ function applyBottomHudState(collapsed) {
   hudToggleButtonEl.setAttribute("aria-expanded", String(!collapsed))
   hudToggleButtonEl.setAttribute(
     "aria-label",
-    collapsed ? "Mo thong tin tran dau" : "Thu gon thong tin tran dau"
+    collapsed ? "Mở thông tin trận đấu" : "Thu gọn thông tin trận đấu"
   )
 }
 
@@ -475,15 +475,15 @@ function setStatus(text, hold = 0) {
 
 function getDefaultStatus() {
   if (state.boss && state.boss.health > 0) {
-    return state.boss.phase === 2 ? "Boss phase 2 - ne dan va phan don" : "Danh bai Guardian Core"
+    return state.boss.phase === 2 ? "Trùm giai đoạn 2 - né đạn và phản đòn" : "Đánh bại Lõi Hộ Vệ"
   }
 
   if (state.totalCrystals > 0 && player.crystals < state.totalCrystals) {
-    return `Tim them ${state.totalCrystals - player.crystals} tinh the`
+    return `Tìm thêm ${state.totalCrystals - player.crystals} tinh thể`
   }
 
   if (state.currentLevel.exit) {
-    return "Cong sang da mo - tien ve dich"
+    return "Cổng sáng đã mở - tiến về đích"
   }
 
   return state.currentLevel.config.objective
@@ -501,7 +501,7 @@ function tickStatus(delta) {
 
 function refreshHud() {
   levelValueEl.textContent = `${state.currentLevelIndex + 1} / ${LEVELS.length}`
-  crystalCountEl.textContent = state.totalCrystals > 0 ? `${player.crystals} / ${state.totalCrystals}` : "Boss"
+  crystalCountEl.textContent = state.totalCrystals > 0 ? `${player.crystals} / ${state.totalCrystals}` : "Trùm"
 
   healthFillEl.style.width = `${(player.health / player.maxHealth) * 100}%`
   spiritFillEl.style.width = `${(player.spirit / player.maxSpirit) * 100}%`
@@ -509,13 +509,13 @@ function refreshHud() {
   spiritTextEl.textContent = `${Math.floor(player.spirit)} / ${player.maxSpirit}`
 
   if (player.dashTimer > 0) {
-    dashValueEl.textContent = "Dang luot"
+    dashValueEl.textContent = "Đang lướt"
   } else if (!player.canDash && player.dashCooldown <= 0) {
-    dashValueEl.textContent = "Cham dat"
+    dashValueEl.textContent = "Chạm đất"
   } else if (player.dashCooldown > 0) {
-    dashValueEl.textContent = `Hoi ${Math.max(1, Math.ceil(player.dashCooldown / 12))}`
+    dashValueEl.textContent = `Hồi ${Math.max(1, Math.ceil(player.dashCooldown / 12))}`
   } else {
-    dashValueEl.textContent = "San sang"
+    dashValueEl.textContent = "Sẵn sàng"
   }
 
   const shownTime = state.gameRunning ? player.runTime : player.finishedTime || player.runTime
@@ -645,10 +645,10 @@ function updateFullscreenButtonLabel() {
   const isActive =
     document.fullscreenElement === gamePanelEl ||
     (gamePanelEl.classList.contains("is-fullscreen") && !document.fullscreenElement)
-  const label = isActive ? "Thoat toan man hinh" : "Toan man hinh"
+  const label = isActive ? "Thoát toàn màn hình" : "Toàn màn hình"
 
   fullscreenButtonEl.textContent = label
-  rotateFullscreenButtonEl.textContent = isActive ? "Thoat toan man hinh" : "Vao toan man hinh"
+  rotateFullscreenButtonEl.textContent = isActive ? "Thoát toàn màn hình" : "Vào toàn màn hình"
 }
 
 function updateMobileLayoutState() {
@@ -727,7 +727,7 @@ function startCampaign() {
   state.overlayMode = "playing"
   state.nextLevelIndex = null
   setOverlay("", "", "", false)
-  setStatus("Bat dau hanh trinh", 55)
+  setStatus("Bắt đầu hành trình", 55)
   state.gameRunning = true
   state.lastTime = performance.now()
   if (!wasRunning) {
@@ -741,7 +741,7 @@ function startNextLevel() {
   state.overlayMode = "playing"
   state.nextLevelIndex = null
   setOverlay("", "", "", false)
-  setStatus("Tien vao man moi", 55)
+  setStatus("Tiến vào màn mới", 55)
   state.gameRunning = true
   state.lastTime = performance.now()
   if (!wasRunning) {
@@ -756,20 +756,20 @@ function finishRun(won) {
 
   if (won) {
     playWinSound()
-    setStatus("Guardian Core da sup do")
+    setStatus("Lõi Hộ Vệ đã sụp đổ")
     setOverlay(
-      "Ban da hoan thanh Pixel Relic Saga",
-      `Ba man da duoc vuot qua trong ${formatTime(player.finishedTime)}. Nhan de bat dau mot chuyen di moi.`,
-      "Choi lai tu dau",
+      "Bạn đã hoàn thành Hành Trình Di Tích Pixel",
+      `Ba màn đã được vượt qua trong ${formatTime(player.finishedTime)}. Nhấn để bắt đầu một chuyến đi mới.`,
+      "Chơi lại từ đầu",
       true
     )
   } else {
     playLoseSound()
-    setStatus("Noi luc da can")
+    setStatus("Nội lực đã cạn")
     setOverlay(
-      "Ban da that bai",
-      `Ban dung lai o ${LEVELS[state.currentLevelIndex].name} sau ${formatTime(player.finishedTime)}. Nhan de thu lai.`,
-      "Thu lai",
+      "Bạn đã thất bại",
+      `Bạn dừng lại ở ${LEVELS[state.currentLevelIndex].name} sau ${formatTime(player.finishedTime)}. Nhấn để thử lại.`,
+      "Thử lại",
       true
     )
   }
@@ -784,9 +784,9 @@ function completeLevel() {
   state.nextLevelIndex = state.currentLevelIndex + 1
 
   setOverlay(
-    `Hoan thanh ${LEVELS[state.currentLevelIndex].name}`,
-    `Nhan de tien vao ${LEVELS[state.nextLevelIndex].name}. Thoi gian hien tai la ${formatTime(player.runTime)}.`,
-    "Sang man tiep",
+    `Hoàn thành ${LEVELS[state.currentLevelIndex].name}`,
+    `Nhấn để tiến vào ${LEVELS[state.nextLevelIndex].name}. Thời gian hiện tại là ${formatTime(player.runTime)}.`,
+    "Sang màn tiếp theo",
     true
   )
 }
@@ -938,7 +938,7 @@ function updateGuarding(delta) {
   }
 
   player.velocityX *= Math.pow(0.55, delta)
-  setStatus("Dang gong de hoi mau", 2)
+  setStatus("Đang gồng để hồi máu", 2)
 
   if (player.health >= player.maxHealth || player.spirit <= 0) {
     return
@@ -1000,7 +1000,7 @@ function processJump() {
     player.canDash = true
     state.screenShake = 1.1
     spawnParticles(player.x + player.width / 2, player.y + player.height / 2, 12, ["#85f7ff", "#ffffff"], 1.6, 0.02)
-    setStatus("Nhay doi kich hoat", 26)
+    setStatus("Nhảy đôi kích hoạt", 26)
     playDoubleJumpSound()
   }
 }
@@ -1117,7 +1117,7 @@ function chooseBossAttack() {
   }
 
   playBossSound()
-  setStatus("Boss dang ra don", 24)
+  setStatus("Trùm đang ra đòn", 24)
 }
 
 function updateBoss(delta) {
@@ -1455,7 +1455,7 @@ function handleBeacons() {
     player.spawnY = beacon.y + beacon.height - player.height
     state.screenShake = 1.4
     spawnParticles(beacon.x + beacon.width / 2, beacon.y + 4, 16, ["#f8d26b", "#ffffff", "#e57c46"], 1.8, 0.01)
-    setStatus("Checkpoint da duoc kich hoat", 55)
+    setStatus("Điểm lưu đã được kích hoạt", 55)
     playCollectSound()
   })
 }
@@ -1482,7 +1482,7 @@ function handleJumpPads() {
     pad.bounce = 1
     state.screenShake = 1.7
     spawnParticles(pad.x + pad.width / 2, pad.y + 2, 12, ["#ffe59a", "#f0b454", "#ffffff"], 1.9, 0.01)
-    setStatus("Be nay day ban vut len", 26)
+    setStatus("Bệ nảy đẩy bạn vút lên", 26)
     playJumpSound()
   })
 }
@@ -1506,9 +1506,9 @@ function collectCrystals() {
 
   if (collectedAny) {
     if (player.crystals === state.totalCrystals) {
-      setStatus("Da du tinh the - cong sang mo ra", 70)
+      setStatus("Đã đủ tinh thể - cổng sáng mở ra", 70)
     } else {
-      setStatus("Tinh the moi da duoc thu thap", 36)
+      setStatus("Tinh thể mới đã được thu thập", 36)
     }
   }
 }
@@ -1534,7 +1534,7 @@ function handleHazards() {
       player.airJumps = 1
       player.canDash = true
       gainSpirit(8)
-      setStatus("Dap guc quai vat", 28)
+      setStatus("Đạp gục quái vật", 28)
       return
     }
 
@@ -1564,7 +1564,7 @@ function checkObjective() {
         completeLevel()
       }
     } else {
-      setStatus("Can thu them tinh the truoc khi qua cong", 16)
+      setStatus("Cần thu thêm tinh thể trước khi qua cổng", 16)
     }
   }
 }
@@ -1627,7 +1627,7 @@ function damagePlayer(amount, direction, shouldRespawn) {
     respawnPlayer()
   }
 
-  setStatus("Trung don - canh giu khoang cach", 46)
+  setStatus("Trúng đòn - canh giữ khoảng cách", 46)
 }
 
 function damageEnemy(enemy, amount, direction) {
@@ -1666,7 +1666,7 @@ function damageBoss(amount, direction) {
 
   if (boss.health === 0) {
     spawnParticles(boss.x + boss.width / 2, boss.y + boss.height / 2, 32, ["#f2779d", "#ffffff", "#f8d26b"], 2.4, 0.04)
-    setStatus("Guardian Core da bi danh bai", 120)
+    setStatus("Lõi Hộ Vệ đã bị đánh bại", 120)
     finishRun(true)
   }
 }
@@ -1699,7 +1699,7 @@ function attemptDash() {
   player.coyoteTimer = 0
   state.screenShake = 2.1
   spawnParticles(player.x + player.width / 2, player.y + player.height / 2, 18, ["#ffe59a", "#f0b454", "#ffffff"], 2, 0.01)
-  setStatus("Dash kich hoat", 20)
+  setStatus("Lướt kích hoạt", 20)
   playDashSound()
 }
 
@@ -1727,7 +1727,7 @@ function performSlash() {
   })
 
   spawnParticles(player.x + (player.facing > 0 ? player.width : 0), player.y + 8, 8, ["#ffe59a", "#ffffff"], 1.3, 0.01)
-  setStatus("Chem mo duong", 18)
+  setStatus("Chém mở đường", 18)
   playSlashSound()
 }
 
@@ -1755,7 +1755,7 @@ function castBlast() {
   })
 
   spawnParticles(player.x + player.width / 2, player.y + 7, 10, ["#7af5ff", "#ffffff"], 1.4, 0.01)
-  setStatus("Cau nang luong duoc phong ra", 18)
+  setStatus("Cầu năng lượng được phóng ra", 18)
   playBlastSound()
 }
 
@@ -2270,9 +2270,9 @@ loadLevel(0, true)
 state.overlayMode = "start"
 applyBottomHudState(readStoredHudCollapsed())
 setOverlay(
-  "Vuot qua ba man va danh bai boss cuoi",
-  "Ban co the chem, ban cau nang luong, dash tren khong va giu the gong de doi noi luc lay mau truoc tran boss.",
-  "Bat dau hanh trinh",
+  "Vượt qua ba màn và đánh bại trùm cuối",
+  "Bạn có thể chém, bắn cầu năng lượng, lướt trên không và giữ thế gồng để đổi nội lực lấy máu trước trận trùm.",
+  "Bắt đầu hành trình",
   true
 )
 updateMobileLayoutState()

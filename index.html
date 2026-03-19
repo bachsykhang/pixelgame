@@ -3,25 +3,25 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pixel Relic Saga</title>
+  <title>Hành Trình Di Tích Pixel</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <main class="shell">
     <section class="hero-panel">
-      <p class="eyebrow">HTML &bull; CSS &bull; JavaScript Action Platformer</p>
-      <h1>Pixel Relic Saga</h1>
+      <p class="eyebrow">HTML &bull; CSS &bull; JavaScript &bull; Game hành động đi cảnh</p>
+      <h1>Hành Trình Di Tích Pixel</h1>
       <p class="subtitle">
-        Ban nang cap nay co nhieu man, boss cuoi, am thanh synth, ki nang chem va cau nang luong, cung voi che do gong de hoi mau bang noi luc.
+        Bản nâng cấp này có nhiều màn, trùm cuối, âm thanh synth, kỹ năng chém và cầu năng lượng, cùng với chế độ gồng để hồi máu bằng nội lực.
       </p>
       <div class="controls-card">
-        <p><span>A / D</span> Di chuyen</p>
-        <p><span>W / Space</span> Nhay va nhay doi</p>
-        <p><span>Shift</span> Dash</p>
-        <p><span>J</span> Chem gan</p>
-        <p><span>L</span> Ban cau nang luong</p>
-        <p><span>Giu F</span> Gong de hoi mau</p>
-        <p><span>R</span> Choi lai tu dau</p>
+        <p><span>A / D</span> Di chuyển</p>
+        <p><span>W / Space</span> Nhảy và nhảy đôi</p>
+        <p><span>Shift</span> Lướt</p>
+        <p><span>J</span> Chém gần</p>
+        <p><span>L</span> Bắn cầu năng lượng</p>
+        <p><span>Giữ F</span> Gồng để hồi máu</p>
+        <p><span>R</span> Chơi lại từ đầu</p>
       </div>
     </section>
 
@@ -29,18 +29,18 @@
       <div class="canvas-wrap">
         <div class="hud hud--top" style="opacity: 0.4;">
           <div class="hud-item hud-item--level">
-            <span class="label">Man</span>
+            <span class="label">Màn</span>
             <strong id="levelValue">1</strong>
           </div>
           <div class="hud-item hud-item--meter">
-            <span class="label">Mau</span>
+            <span class="label">Máu</span>
             <div class="meter">
               <div class="meter-fill meter-fill--health" id="healthFill"></div>
             </div>
             <strong id="healthText">100 / 100</strong>
           </div>
           <div class="hud-item hud-item--meter">
-            <span class="label">Noi luc</span>
+            <span class="label">Nội lực</span>
             <div class="meter">
               <div class="meter-fill meter-fill--spirit" id="spiritFill"></div>
             </div>
@@ -49,20 +49,20 @@
         </div>
         <div class="hud hud--bottom" id="bottomHud">
           <div class="hud-item">
-            <span class="label">Tinh the</span>
+            <span class="label">Tinh thể</span>
             <strong id="crystalCount">0 / 0</strong>
           </div>
           <div class="hud-item">
-            <span class="label">Dash</span>
-            <strong id="dashValue">San sang</strong>
+            <span class="label">Lướt</span>
+            <strong id="dashValue">Sẵn sàng</strong>
           </div>
           <div class="hud-item">
-            <span class="label">Thoi gian</span>
+            <span class="label">Thời gian</span>
             <strong id="timeValue">00:00.0</strong>
           </div>
           <div class="hud-item hud-item--full hud-item--status">
-            <span class="label">Trang thai</span>
-            <strong id="statusText">San sang vao tan tich</strong>
+            <span class="label">Trạng thái</span>
+            <strong id="statusText">Sẵn sàng vào tàn tích</strong>
           </div>
         </div>
         <button
@@ -71,54 +71,54 @@
           type="button"
           aria-controls="bottomHud"
           aria-expanded="true"
-          aria-label="Thu gon thong tin tran dau"
+          aria-label="Thu gọn thông tin trận đấu"
         >
           <span class="hud-toggle__icon" aria-hidden="true"></span>
         </button>
-        <div class="stage-chip" id="stageChip" style="display: none;">Man 1 - Sunken Gate</div>
-        <button class="fullscreen-toggle" id="fullscreenButton" type="button">Toan man hinh</button>
+        <div class="stage-chip" id="stageChip" style="display: none;">Màn 1 - Cổng Chìm</div>
+        <button class="fullscreen-toggle" id="fullscreenButton" type="button">Toàn màn hình</button>
         <div class="boss-bar hidden" id="bossBar" aria-live="polite">
           <div class="boss-bar__top">
-            <span id="bossName">Guardian Core</span>
-            <strong id="bossText">Boss</strong>
+            <span id="bossName">Lõi Hộ Vệ</span>
+            <strong id="bossText">Trùm</strong>
           </div>
           <div class="boss-meter">
             <div class="boss-meter__fill" id="bossFill"></div>
           </div>
         </div>
-        <canvas id="gameCanvas" width="384" height="224" aria-label="Pixel platformer canvas"></canvas>
+        <canvas id="gameCanvas" width="384" height="224" aria-label="Khung vẽ game đi cảnh pixel"></canvas>
         <div class="overlay" id="overlay">
           <div class="overlay-card">
-            <p class="overlay-kicker">Boss Update</p>
-            <h2 id="overlayTitle">Vuot qua ba man va danh bai boss cuoi</h2>
+            <p class="overlay-kicker">Cập nhật trùm</p>
+            <h2 id="overlayTitle">Vượt qua ba màn và đánh bại trùm cuối</h2>
             <p id="overlayText">
-              Ban co the chem, ban cau nang luong, dash tren khong va giu the gong de doi noi luc lay mau truoc tran boss.
+              Bạn có thể chém, bắn cầu năng lượng, lướt trên không và giữ thế gồng để đổi nội lực lấy máu trước trận trùm.
             </p>
-            <button id="overlayButton" type="button">Bat dau hanh trinh</button>
+            <button id="overlayButton" type="button">Bắt đầu hành trình</button>
           </div>
         </div>
         <div class="rotate-hint hidden" id="rotateHint" aria-live="polite">
           <div class="rotate-hint__card">
             <p class="rotate-hint__icon">&#8635;</p>
-            <h3>Xoay ngang de choi</h3>
+            <h3>Xoay ngang để chơi</h3>
             <p>
-              Tren dien thoai, game se choi tot nhat khi may dang nam ngang. Ban co the bam nut duoi day de vao toan man hinh roi xoay may.
+              Trên điện thoại, game sẽ chơi tốt nhất khi máy đang nằm ngang. Bạn có thể bấm nút dưới đây để vào toàn màn hình rồi xoay máy.
             </p>
             <button class="fullscreen-toggle fullscreen-toggle--cta" id="rotateFullscreenButton" type="button">
-              Vao toan man hinh
+              Vào toàn màn hình
             </button>
           </div>
         </div>
       </div>
 
-      <div class="touch-controls" aria-label="Touch controls">
-        <button class="touch-btn" data-action="left" type="button">LEFT</button>
-        <button class="touch-btn" data-action="right" type="button">RIGHT</button>
-        <button class="touch-btn" data-action="jump" type="button">JUMP</button>
-        <button class="touch-btn touch-btn--dash" data-action="dash" type="button">DASH</button>
-        <button class="touch-btn" data-action="slash" type="button">SLASH</button>
-        <button class="touch-btn" data-action="blast" type="button">BLAST</button>
-        <button class="touch-btn touch-btn--wide" data-action="guard" type="button">GUARD</button>
+      <div class="touch-controls" aria-label="Điều khiển cảm ứng">
+        <button class="touch-btn" data-action="left" type="button">TRÁI</button>
+        <button class="touch-btn" data-action="right" type="button">PHẢI</button>
+        <button class="touch-btn" data-action="jump" type="button">NHẢY</button>
+        <button class="touch-btn touch-btn--dash" data-action="dash" type="button">LƯỚT</button>
+        <button class="touch-btn" data-action="slash" type="button">CHÉM</button>
+        <button class="touch-btn" data-action="blast" type="button">BẮN</button>
+        <button class="touch-btn touch-btn--wide" data-action="guard" type="button">GỒNG</button>
       </div>
     </section>
   </main>

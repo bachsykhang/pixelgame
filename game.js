@@ -27,9 +27,53 @@ const gamePanelEl = document.querySelector(".game-panel")
 const fullscreenButtonEl = document.getElementById("fullscreenButton")
 const rotateHintEl = document.getElementById("rotateHint")
 const rotateFullscreenButtonEl = document.getElementById("rotateFullscreenButton")
+const inventoryButtonEl = document.getElementById("inventoryButton")
+const inventoryCountEl = document.getElementById("inventoryCount")
+const inventoryPanelEl = document.getElementById("inventoryPanel")
+const inventoryTitleEl = document.getElementById("inventoryTitle")
+const inventoryBodyEl = document.getElementById("inventoryBody")
+const inventoryHintEl = document.getElementById("inventoryHint")
+const inventoryCloseButtonEl = document.getElementById("inventoryCloseButton")
 const touchButtons = document.querySelectorAll(".touch-btn")
 
 const HUD_COLLAPSED_STORAGE_KEY = "pixel-relic-saga-bottom-hud-collapsed"
+
+const ITEM_DEFINITIONS = {
+  herb: {
+    mapKey: "T",
+    shortLabel: "T",
+    name: "Thảo dược",
+    description: "Hồi 34 máu.",
+    color: "#9cf79f",
+    accent: "#e6ffd7"
+  },
+  spirit: {
+    mapKey: "U",
+    shortLabel: "N",
+    name: "Linh dược",
+    description: "Hồi 42 nội lực.",
+    color: "#8ce6ff",
+    accent: "#e1f8ff"
+  },
+  dash: {
+    mapKey: "V",
+    shortLabel: "P",
+    name: "Phong phù",
+    description: "Làm mới lướt và hồi nhẹ nội lực.",
+    color: "#ffe59a",
+    accent: "#fff5d4"
+  },
+  storm: {
+    mapKey: "Z",
+    shortLabel: "L",
+    name: "Lôi phù",
+    description: "Gây sát thương diện rộng quanh bản thân.",
+    color: "#f6a1ff",
+    accent: "#ffe1ff"
+  }
+}
+
+const ITEM_ORDER = ["herb", "spirit", "dash", "storm"]
 
 const TILE = 16
 const GRAVITY = 0.42
@@ -59,11 +103,12 @@ const ENEMY_RANGED_RANGE = 136
 const ENEMY_ATTACK_COOLDOWN = 54
 const ENEMY_PROJECTILE_SPEED = 2.35
 const ENEMY_GRAVITY = 0.32
+const PLAYER_SPRITE_FRAME_SIZE = 16
 
 const LEVELS = [
   {
     name: "Màn 1 - Làng Tre",
-    objective: "Nói chuyện với dân làng rồi chọn cổng lam để tập luyện hoặc cổng vàng để nhận nhiệm vụ",
+    objective: "Nói chuyện với dân làng, nhặt vài vật phẩm rồi chọn cổng lam để luyện hoặc cổng vàng để vào tuyến chính.",
     palette: {
       skyTop: "#99d8ff",
       skyBottom: "#ffe0a6",
@@ -80,31 +125,31 @@ const LEVELS = [
       N: {
         name: "Trưởng làng Hạc",
         dialogue:
-          "Làng Tre là nơi nghỉ chân của ninja trẻ. Cổng lam dẫn tới sân tập quái, còn cổng vàng đưa con vào tuyến nhiệm vụ chính."
+          "Làng Tre là nơi nghỉ chân của ninja trẻ. Cổng lam dẫn tới sân tập quái, còn cổng vàng sẽ đưa con vào hành trình chính."
       },
       M: {
         name: "Cô bán đồ Mộc",
         dialogue:
-          "Ta chưa mở cửa hàng thật đâu, nhưng tinh thể trên đường đi sẽ giúp con hồi nội lực. Nhặt chúng khi tiện, đừng vì chúng mà bỏ lỡ nhịp chiến đấu."
+          "Ta đã rải vài vật phẩm quanh làng để con làm quen với túi đồ. Nhặt rồi bấm B để mở túi, dùng lúc cần kẻo phí."
       },
       H: {
         name: "Sư phụ Aoi",
         dialogue:
-          "Nếu muốn vào form chiến đấu nhanh hơn, hãy rẽ qua sân tập trước. Quái ở đó đủ hung để con tập chém, lướt và gồng hồi máu."
+          "Từ giờ con không chỉ có kiếm và nội lực. Vật phẩm sẽ cứu con ở những khu khó, nhất là khi quái kéo tới đông."
       }
     },
     map: [
       "..............................................................",
       "..............................................................",
-      ".............####......................####...................",
+      ".............####....T...............####........U............",
       "..............................................................",
-      "....####..................####....................####........",
+      "...####.....................####......................####....",
       "..............................................................",
-      ".........................####.................................",
+      "......................V..........####.........................",
       "..............................................................",
       "..............................................................",
       "..............................................................",
-      "..P....N........M.................H..................Y....X...",
+      "..P....N........M.................H..............Y......X.....",
       "##############################################################",
       "..............................................................",
       ".............................................................."
@@ -112,7 +157,7 @@ const LEVELS = [
   },
   {
     name: "Màn 2 - Sân Tập Bóng Ảnh",
-    objective: "Quét quái trong sân tập rồi đi qua cổng vàng để vào nhiệm vụ, hoặc cổng lam để quay về làng",
+    objective: "Quét quái trong sân tập, thử nhặt và dùng vật phẩm rồi đi qua cổng vàng để tiến tiếp hoặc cổng lam để quay về làng.",
     palette: {
       skyTop: "#86c7ff",
       skyBottom: "#ffd996",
@@ -129,30 +174,30 @@ const LEVELS = [
       H: {
         name: "Huấn luyện viên Ren",
         dialogue:
-          "Đây là nơi farm kỹ năng. Cứ dọn quái cho quen tay, khi ổn rồi đi qua cổng vàng để vào tuyến nhiệm vụ thật."
+          "Đây là nơi luyện combo và làm quen với túi đồ. Cứ dọn quái cho quen tay rồi sang cổng vàng để vào tuyến thật."
       }
     },
     map: [
       "..............................................................",
-      "..............................................................",
-      "......................C.......................................",
+      "...T.....................C.......................U............",
+      "......................####....................................",
       ".............###....................R...............####......",
       "..............................................................",
-      ".....C.........................####................C..........",
+      ".....C...............V.........####................C..........",
       "..............J...............................................",
       "............................................R.................",
-      ".........####.............E...........####....................",
+      ".........####.............E...........####..............T.....",
       "..............................................................",
-      "..X..P........E..........H.............E..............Y.......",
+      "..X..P........E..........H.............E.........U....Y.......",
       "##############################################################",
       "..............................................................",
-      ".............B.................####...........................",
-      ".............................................................."
+      ".............B.................####..............V............",
+      "...............................................Z.............."
     ]
   },
   {
     name: "Màn 3 - Cổng Chìm",
-    objective: "Băng qua khu cổng và đi qua cổng sáng để áp sát chiến tuyến",
+    objective: "Băng qua tàn tích đầu tiên, lượm đồ hỗ trợ rồi chạm cổng sáng để tiến vào rừng sâu.",
     palette: {
       skyTop: "#abdfff",
       skyBottom: "#ffe4a8",
@@ -171,16 +216,16 @@ const LEVELS = [
       "..............................................................",
       ".............C..............R................................",
       ".....###............###.............C........................",
-      "..P........B..............................J..................",
+      "..P........B..................T..........J...................",
       "######............S...........####....................###....",
-      ".............C...........E.................#####.............",
+      ".............C...........E........V........#####.........U...",
       "....####.......................C.........................X...",
-      "....................####.................####...............#",
-      "..C........................................................#",
-      "#########..............J.............B.....................#",
-      "...............R..................#####....................#",
-      "...........................................................#",
-      "#########################....###############################"
+      "..T.................####.................####...............#.",
+      "..C........................................................#.",
+      "#########..............J.............B............Z........#.",
+      "...............R..................#####....................#.",
+      "...........................................................#.",
+      "#########################....###############################."
     ]
   },
   {
@@ -252,6 +297,109 @@ const LEVELS = [
   }
 ]
 
+const SCENE_THEMES = [
+  {
+    skyMid: "#7fc8ff",
+    glowColor: "#fff0bb",
+    glowHalo: "rgba(255, 226, 164, 0.34)",
+    hazeTop: "rgba(255, 248, 220, 0.2)",
+    hazeBottom: "rgba(255, 214, 134, 0.32)",
+    cloudColor: "rgba(255, 255, 255, 0.86)",
+    cloudShade: "rgba(173, 224, 255, 0.24)",
+    sparkleColor: "rgba(255, 255, 255, 0.16)",
+    ridgeBack: "#7cab96",
+    ridgeFront: "#325545",
+    detailType: "village",
+    detailMain: "#305046",
+    detailAccent: "#f6d685",
+    floraColor: "#274536",
+    floraAccent: "#9be8a8",
+    ambientType: "leaf",
+    ambientDensity: 22,
+    ambientColors: ["#ffe8a8", "#9be8a8", "#f6b36d"]
+  },
+  {
+    skyMid: "#73b9f7",
+    glowColor: "#ffe4a6",
+    glowHalo: "rgba(255, 221, 138, 0.3)",
+    hazeTop: "rgba(255, 245, 222, 0.18)",
+    hazeBottom: "rgba(255, 204, 122, 0.26)",
+    cloudColor: "rgba(255, 251, 237, 0.8)",
+    cloudShade: "rgba(123, 196, 255, 0.24)",
+    sparkleColor: "rgba(255, 255, 255, 0.12)",
+    ridgeBack: "#688d85",
+    ridgeFront: "#284640",
+    detailType: "dojo",
+    detailMain: "#2d443e",
+    detailAccent: "#ffd67d",
+    floraColor: "#315448",
+    floraAccent: "#84d9a0",
+    ambientType: "leaf",
+    ambientDensity: 20,
+    ambientColors: ["#ffd67d", "#9ce6a8", "#fff2cf"]
+  },
+  {
+    skyMid: "#90c5ef",
+    glowColor: "#ffedb4",
+    glowHalo: "rgba(255, 229, 160, 0.28)",
+    hazeTop: "rgba(255, 244, 229, 0.16)",
+    hazeBottom: "rgba(190, 226, 255, 0.24)",
+    cloudColor: "rgba(245, 251, 255, 0.76)",
+    cloudShade: "rgba(159, 201, 230, 0.2)",
+    sparkleColor: "rgba(225, 246, 255, 0.11)",
+    ridgeBack: "#678b79",
+    ridgeFront: "#294a3d",
+    detailType: "ruins",
+    detailMain: "#385247",
+    detailAccent: "#9fd8cf",
+    floraColor: "#213d33",
+    floraAccent: "#7fcbb9",
+    ambientType: "mote",
+    ambientDensity: 24,
+    ambientColors: ["#dfffff", "#9fd8cf", "#fff1ca"]
+  },
+  {
+    skyMid: "#717ab3",
+    glowColor: "#ffd39c",
+    glowHalo: "rgba(255, 168, 136, 0.22)",
+    hazeTop: "rgba(255, 216, 196, 0.12)",
+    hazeBottom: "rgba(178, 153, 238, 0.18)",
+    cloudColor: "rgba(250, 231, 235, 0.62)",
+    cloudShade: "rgba(132, 154, 218, 0.18)",
+    sparkleColor: "rgba(255, 214, 214, 0.12)",
+    ridgeBack: "#5e6789",
+    ridgeFront: "#243757",
+    detailType: "pass",
+    detailMain: "#2c3256",
+    detailAccent: "#f9a5a5",
+    floraColor: "#3d355d",
+    floraAccent: "#ffbcb0",
+    ambientType: "ash",
+    ambientDensity: 24,
+    ambientColors: ["#ffc8b6", "#ffd37b", "#f9a5a5"]
+  },
+  {
+    skyMid: "#4e5c87",
+    glowColor: "#ffd1cb",
+    glowHalo: "rgba(255, 121, 137, 0.24)",
+    hazeTop: "rgba(255, 207, 207, 0.09)",
+    hazeBottom: "rgba(149, 108, 142, 0.16)",
+    cloudColor: "rgba(231, 223, 255, 0.44)",
+    cloudShade: "rgba(108, 134, 214, 0.15)",
+    sparkleColor: "rgba(255, 204, 214, 0.08)",
+    ridgeBack: "#5c556e",
+    ridgeFront: "#23263b",
+    detailType: "fortress",
+    detailMain: "#2b2939",
+    detailAccent: "#ff8cae",
+    floraColor: "#3a3444",
+    floraAccent: "#be8dff",
+    ambientType: "ember",
+    ambientDensity: 26,
+    ambientColors: ["#ff8cae", "#ffd18f", "#ffffff"]
+  }
+]
+
 const input = {
   left: false,
   right: false,
@@ -268,6 +416,7 @@ const state = {
   dialogueNpcId: null,
   nextLevelIndex: null,
   gameRunning: false,
+  inventoryOpen: false,
   lastTime: 0,
   screenShake: 0,
   status: {
@@ -312,16 +461,27 @@ const player = {
   dashCooldown: 0,
   attackCooldown: 0,
   attackPoseTimer: 0,
+  attackType: "",
   blastCooldown: 0,
   guardSoundTimer: 0,
   isGuarding: false,
   runTime: 0,
-  finishedTime: 0
+  finishedTime: 0,
+  inventory: {
+    herb: 1,
+    spirit: 0,
+    dash: 0,
+    storm: 0
+  }
 }
 
 const particles = []
+const sceneAmbience = []
 const projectiles = []
 const meleeBursts = []
+const spriteSheets = {
+  player: null
+}
 
 const audioState = {
   ctx: null,
@@ -337,6 +497,14 @@ function makeId() {
 
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value))
+}
+
+function randomBetween(min, max) {
+  return min + Math.random() * (max - min)
+}
+
+function pickRandom(list) {
+  return list[Math.floor(Math.random() * list.length)]
 }
 
 function readStoredHudCollapsed() {
@@ -371,6 +539,256 @@ function toggleBottomHud() {
   storeHudCollapsed(nextCollapsed)
 }
 
+function resetInventory() {
+  ITEM_ORDER.forEach((itemKey) => {
+    player.inventory[itemKey] = itemKey === "herb" ? 1 : 0
+  })
+}
+
+function getTotalInventoryCount() {
+  return ITEM_ORDER.reduce((total, itemKey) => total + (player.inventory[itemKey] || 0), 0)
+}
+
+function hasNearbyStormTarget() {
+  const enemyInRange = state.currentLevel?.enemies?.some((enemy) => {
+    if (enemy.dead) {
+      return false
+    }
+
+    const dx = enemy.x + enemy.width / 2 - (player.x + player.width / 2)
+    const dy = enemy.y + enemy.height / 2 - (player.y + player.height / 2)
+    return dx * dx + dy * dy <= 84 * 84
+  })
+
+  if (enemyInRange) {
+    return true
+  }
+
+  if (state.boss && state.boss.health > 0) {
+    const dx = state.boss.x + state.boss.width / 2 - (player.x + player.width / 2)
+    const dy = state.boss.y + state.boss.height / 2 - (player.y + player.height / 2)
+    return dx * dx + dy * dy <= 96 * 96
+  }
+
+  return false
+}
+
+function isInventoryItemUsable(itemKey) {
+  if ((player.inventory[itemKey] || 0) <= 0) {
+    return false
+  }
+
+  if (itemKey === "herb") {
+    return player.health < player.maxHealth
+  }
+
+  if (itemKey === "spirit") {
+    return player.spirit < player.maxSpirit
+  }
+
+  if (itemKey === "storm") {
+    return hasNearbyStormTarget()
+  }
+
+  return true
+}
+
+function refreshInventoryUi() {
+  const totalCount = getTotalInventoryCount()
+  inventoryCountEl.textContent = String(totalCount)
+  inventoryButtonEl.classList.toggle("is-empty", totalCount === 0)
+  inventoryButtonEl.classList.toggle("is-open", state.inventoryOpen)
+  inventoryButtonEl.setAttribute("aria-expanded", String(state.inventoryOpen))
+  inventoryButtonEl.setAttribute(
+    "aria-label",
+    state.inventoryOpen ? "Đóng túi đồ" : `Mở túi đồ, hiện có ${totalCount} vật phẩm`
+  )
+
+  if (!inventoryBodyEl) {
+    return
+  }
+
+  inventoryTitleEl.textContent = `Hành trang ninja • ${totalCount} vật phẩm`
+  inventoryHintEl.textContent =
+    totalCount > 0
+      ? "Nhấn B để mở hoặc đóng. Khi mở túi, bấm 1-4 để dùng nhanh."
+      : "Túi đang trống. Hãy nhặt vật phẩm trên đường hoặc hạ quái để có thêm đồ."
+
+  inventoryBodyEl.innerHTML = ITEM_ORDER.map((itemKey, index) => {
+    const definition = ITEM_DEFINITIONS[itemKey]
+    const count = player.inventory[itemKey] || 0
+    const disabled = !isInventoryItemUsable(itemKey)
+    const metaText = `Số lượng ${count} • Dùng nhanh ${index + 1}`
+
+    return `
+      <div class="inventory-item${count === 0 ? " is-empty" : ""}">
+        <div class="inventory-item__icon" style="background: linear-gradient(180deg, ${definition.accent}, ${definition.color});">
+          ${definition.shortLabel}
+        </div>
+        <div>
+          <p class="inventory-item__name">${definition.name}</p>
+          <p class="inventory-item__meta">${metaText}</p>
+          <p class="inventory-item__desc">${definition.description}</p>
+        </div>
+        <button
+          class="inventory-item__action"
+          type="button"
+          data-item-key="${itemKey}"
+          ${disabled ? "disabled" : ""}
+        >
+          Dùng
+        </button>
+      </div>
+    `
+  }).join("")
+}
+
+function closeInventory(options = {}) {
+  if (!state.inventoryOpen) {
+    return
+  }
+
+  const { resume = true } = options
+  const wasRunning = state.gameRunning
+  state.inventoryOpen = false
+  inventoryPanelEl.classList.add("hidden")
+  refreshInventoryUi()
+
+  const shouldResume = resume && state.overlayMode === "playing" && overlayEl.classList.contains("hidden")
+  state.gameRunning = shouldResume
+
+  if (shouldResume) {
+    state.lastTime = performance.now()
+    if (!wasRunning) {
+      requestAnimationFrame(loop)
+    }
+  }
+
+  render()
+}
+
+function openInventory() {
+  if (state.inventoryOpen || state.transition.active || state.overlayMode !== "playing") {
+    return
+  }
+
+  input.left = false
+  input.right = false
+  input.guard = false
+  player.isGuarding = false
+  state.gameRunning = false
+  state.inventoryOpen = true
+  inventoryPanelEl.classList.remove("hidden")
+  refreshInventoryUi()
+  render()
+}
+
+function toggleInventory() {
+  if (state.inventoryOpen) {
+    closeInventory()
+  } else {
+    openInventory()
+  }
+}
+
+function addItemToInventory(itemKey, amount = 1) {
+  if (!player.inventory[itemKey]) {
+    player.inventory[itemKey] = 0
+  }
+
+  player.inventory[itemKey] += amount
+  refreshInventoryUi()
+}
+
+function useInventoryItem(itemKey) {
+  if ((player.inventory[itemKey] || 0) <= 0) {
+    return false
+  }
+
+  if (itemKey === "herb") {
+    if (player.health >= player.maxHealth) {
+      setStatus("Máu đang đầy, chưa cần Thảo dược", 34)
+      return false
+    }
+
+    const healed = Math.min(34, player.maxHealth - player.health)
+    player.health += healed
+    spawnParticles(player.x + player.width / 2, player.y + player.height / 2, 12, ["#9cf79f", "#ffffff", "#d8ffd0"], 1.4, 0.02)
+    playHealSound()
+    setStatus(`Dùng Thảo dược, hồi ${Math.ceil(healed)} máu`, 44)
+  } else if (itemKey === "spirit") {
+    if (player.spirit >= player.maxSpirit) {
+      setStatus("Nội lực đang đầy, hãy giữ lại Linh dược", 34)
+      return false
+    }
+
+    const beforeSpirit = player.spirit
+    gainSpirit(42)
+    const recovered = Math.floor(player.spirit - beforeSpirit)
+    spawnParticles(player.x + player.width / 2, player.y + player.height / 2, 12, ["#8ce6ff", "#ffffff", "#d8f8ff"], 1.5, 0.01)
+    playCollectSound()
+    setStatus(`Dùng Linh dược, hồi ${recovered} nội lực`, 44)
+  } else if (itemKey === "dash") {
+    player.canDash = true
+    player.dashCooldown = 0
+    player.blastCooldown = Math.max(0, player.blastCooldown - 18)
+    gainSpirit(16)
+    spawnParticles(player.x + player.width / 2, player.y + player.height / 2, 14, ["#ffe59a", "#ffffff", "#85f7ff"], 1.6, 0.01)
+    playDashSound()
+    setStatus("Phong phù làm mới lướt và ổn định nội lực", 44)
+  } else if (itemKey === "storm") {
+    let hitCount = 0
+    const centerX = player.x + player.width / 2
+    const centerY = player.y + player.height / 2
+
+    state.currentLevel.enemies.forEach((enemy) => {
+      if (enemy.dead) {
+        return
+      }
+
+      const dx = enemy.x + enemy.width / 2 - centerX
+      const dy = enemy.y + enemy.height / 2 - centerY
+      if (dx * dx + dy * dy <= 84 * 84) {
+        damageEnemy(enemy, 26, dx >= 0 ? 1 : -1)
+        hitCount += 1
+      }
+    })
+
+    if (state.boss && state.boss.health > 0) {
+      const dx = state.boss.x + state.boss.width / 2 - centerX
+      const dy = state.boss.y + state.boss.height / 2 - centerY
+      if (dx * dx + dy * dy <= 96 * 96) {
+        damageBoss(32, dx >= 0 ? 1 : -1)
+        hitCount += 1
+      }
+    }
+
+    if (hitCount === 0) {
+      setStatus("Chưa có mục tiêu trong tầm của Lôi phù", 34)
+      return false
+    }
+
+    state.screenShake = Math.max(state.screenShake, 2.2)
+    spawnParticles(centerX, centerY, 22, ["#f6a1ff", "#ffffff", "#8ce6ff"], 2.1, 0.02)
+    playBlastSound()
+    setStatus(`Lôi phù bùng nổ, trúng ${hitCount} mục tiêu`, 48)
+  }
+
+  player.inventory[itemKey] = Math.max(0, (player.inventory[itemKey] || 0) - 1)
+  refreshInventoryUi()
+  refreshHud()
+  render()
+  return true
+}
+
+function getInventoryItemKeyFromCode(code) {
+  if (!/^Digit[1-4]$/u.test(code)) {
+    return null
+  }
+
+  return ITEM_ORDER[Number(code.slice(-1)) - 1] || null
+}
+
 function normalizeMap(rows) {
   const maxWidth = Math.max(...rows.map((row) => row.length))
   return rows.map((row) => row.padEnd(maxWidth, "."))
@@ -389,6 +807,7 @@ function buildLevel(config) {
   const map = normalizeMap(config.map)
   const solids = []
   const crystals = []
+  const items = []
   const spikes = []
   const enemies = []
   const beacons = []
@@ -413,6 +832,20 @@ function buildLevel(config) {
           y: y + 4,
           width: 8,
           height: 8,
+          collected: false,
+          bob: Math.random() * Math.PI * 2
+        })
+      }
+
+      const itemKey = ITEM_ORDER.find((entry) => ITEM_DEFINITIONS[entry].mapKey === cell)
+      if (itemKey) {
+        items.push({
+          id: makeId(),
+          itemKey,
+          x: x + 2,
+          y: y + 2,
+          width: 12,
+          height: 12,
           collected: false,
           bob: Math.random() * Math.PI * 2
         })
@@ -515,6 +948,7 @@ function buildLevel(config) {
     height: map.length * TILE,
     solids,
     crystals,
+    items,
     spikes,
     enemies,
     beacons,
@@ -556,6 +990,153 @@ function getCurrentPalette() {
   return state.currentLevel.config.palette
 }
 
+function getCurrentSceneTheme() {
+  const palette = getCurrentPalette()
+  return {
+    skyMid: palette.skyTop,
+    glowColor: "#fff0bb",
+    glowHalo: "rgba(255, 226, 164, 0.28)",
+    hazeTop: "rgba(255, 248, 220, 0.14)",
+    hazeBottom: "rgba(255, 214, 134, 0.2)",
+    cloudColor: "rgba(255, 255, 255, 0.78)",
+    cloudShade: "rgba(163, 214, 255, 0.18)",
+    sparkleColor: "rgba(255, 255, 255, 0.12)",
+    ridgeBack: palette.hillBack,
+    ridgeFront: palette.hillFront,
+    detailType: "ruins",
+    detailMain: "rgba(39, 55, 60, 0.78)",
+    detailAccent: "rgba(255, 226, 142, 0.28)",
+    floraColor: "rgba(40, 60, 50, 0.76)",
+    floraAccent: "rgba(156, 232, 177, 0.22)",
+    ambientType: "mote",
+    ambientDensity: 22,
+    ambientColors: ["#dfffff", "#ffe8b0", "#ffffff"],
+    ...(SCENE_THEMES[state.currentLevelIndex] || {})
+  }
+}
+
+function getAmbientSpawnBand(type) {
+  const levelHeight = state.currentLevel?.height || canvas.height
+  const horizonY = levelHeight - 88
+
+  if (type === "ember" || type === "ash") {
+    return { minY: horizonY - 26, maxY: levelHeight - 18 }
+  }
+
+  if (type === "leaf") {
+    return { minY: 18, maxY: levelHeight - 28 }
+  }
+
+  return { minY: 18, maxY: horizonY + 26 }
+}
+
+function createSceneAmbientParticle(theme) {
+  const levelWidth = state.currentLevel?.width || canvas.width
+  const levelHeight = state.currentLevel?.height || canvas.height
+  const type = theme.ambientType || "mote"
+  const band = getAmbientSpawnBand(type)
+  const baseColor = pickRandom(theme.ambientColors || ["#ffffff"])
+  const particle = {
+    type,
+    x: randomBetween(-24, levelWidth + 24),
+    y: randomBetween(band.minY, band.maxY),
+    size: 2,
+    color: baseColor,
+    alpha: 0.4,
+    velocityX: 0.2,
+    velocityY: 0,
+    sway: randomBetween(0.02, 0.08),
+    phase: Math.random() * Math.PI * 2,
+    phaseSpeed: randomBetween(0.015, 0.04),
+    rotation: Math.random() * Math.PI * 2,
+    rotationSpeed: randomBetween(-0.05, 0.05),
+    twinkle: randomBetween(0.4, 1.25),
+    isSmoke: false
+  }
+
+  if (type === "leaf") {
+    particle.size = randomBetween(2.2, 4.5)
+    particle.alpha = randomBetween(0.28, 0.52)
+    particle.velocityX = randomBetween(0.18, 0.4) * (Math.random() > 0.2 ? 1 : -1)
+    particle.velocityY = randomBetween(-0.02, 0.12)
+    particle.rotationSpeed = randomBetween(-0.09, 0.09)
+  } else if (type === "ash") {
+    particle.size = randomBetween(1.5, 3.2)
+    particle.alpha = randomBetween(0.2, 0.42)
+    particle.velocityX = randomBetween(0.18, 0.48)
+    particle.velocityY = randomBetween(-0.04, 0.08)
+    particle.rotationSpeed = randomBetween(-0.05, 0.05)
+  } else if (type === "ember") {
+    particle.isSmoke = Math.random() < 0.28
+    if (particle.isSmoke) {
+      particle.size = randomBetween(4.5, 8.5)
+      particle.alpha = randomBetween(0.08, 0.16)
+      particle.color = "rgba(180, 154, 188, 0.85)"
+      particle.velocityX = randomBetween(0.05, 0.16)
+      particle.velocityY = randomBetween(-0.16, -0.04)
+      particle.sway = randomBetween(0.01, 0.03)
+    } else {
+      particle.size = randomBetween(2, 3.8)
+      particle.alpha = randomBetween(0.3, 0.62)
+      particle.velocityX = randomBetween(0.16, 0.44)
+      particle.velocityY = randomBetween(-0.14, 0.04)
+      particle.rotationSpeed = randomBetween(-0.08, 0.08)
+    }
+  } else {
+    particle.size = randomBetween(1.8, 3.8)
+    particle.alpha = randomBetween(0.16, 0.36)
+    particle.velocityX = randomBetween(-0.05, 0.16)
+    particle.velocityY = randomBetween(-0.03, 0.05)
+  }
+
+  return particle
+}
+
+function seedSceneAmbience() {
+  sceneAmbience.length = 0
+
+  if (!state.currentLevel) {
+    return
+  }
+
+  const theme = getCurrentSceneTheme()
+  const count = Math.max(14, theme.ambientDensity + Math.floor(state.currentLevel.width / 150))
+
+  for (let index = 0; index < count; index += 1) {
+    sceneAmbience.push(createSceneAmbientParticle(theme))
+  }
+}
+
+function recycleSceneAmbientParticle(particle) {
+  Object.assign(particle, createSceneAmbientParticle(getCurrentSceneTheme()))
+}
+
+function updateSceneAmbience(delta) {
+  if (!state.currentLevel || sceneAmbience.length === 0) {
+    return
+  }
+
+  const levelWidth = state.currentLevel.width
+  const levelHeight = state.currentLevel.height
+
+  sceneAmbience.forEach((particle) => {
+    particle.phase += particle.phaseSpeed * delta
+    particle.rotation += particle.rotationSpeed * delta
+    particle.x += (particle.velocityX + Math.sin(particle.phase) * particle.sway) * delta
+    particle.y += (particle.velocityY + Math.cos(particle.phase * 0.75) * particle.sway * 0.6) * delta
+
+    const outOfBounds =
+      particle.x < -42 ||
+      particle.x > levelWidth + 42 ||
+      particle.y < -42 ||
+      particle.y > levelHeight + 42
+
+    if (outOfBounds) {
+      recycleSceneAmbientParticle(particle)
+    }
+  })
+}
+
 function getLevelSpawn(parsed, options = {}) {
   if (options.spawnOverride) {
     return options.spawnOverride
@@ -580,15 +1161,19 @@ function loadLevel(index, options = {}) {
   state.currentLevel = { ...parsed, config }
   state.totalCrystals = parsed.crystals.length
   state.boss = config.boss ? createBoss(config.boss) : null
+  seedSceneAmbience()
 
   projectiles.length = 0
   particles.length = 0
   meleeBursts.length = 0
   state.screenShake = 0
+  state.inventoryOpen = false
+  inventoryPanelEl.classList.add("hidden")
 
   if (resetRun) {
     player.runTime = 0
     player.finishedTime = 0
+    resetInventory()
   }
 
   player.health = preserveVitals ? clamp(preservedHealth, 1, player.maxHealth) : player.maxHealth
@@ -611,6 +1196,7 @@ function loadLevel(index, options = {}) {
   player.dashCooldown = 0
   player.attackCooldown = 0
   player.attackPoseTimer = 0
+  player.attackType = ""
   player.blastCooldown = 0
   player.guardSoundTimer = 0
   player.isGuarding = false
@@ -623,6 +1209,7 @@ function loadLevel(index, options = {}) {
   camera.y = clamp(player.spawnY - canvas.height / 2, 0, Math.max(0, parsed.height - canvas.height))
 
   setStatus(config.objective, 40)
+  refreshInventoryUi()
   refreshHud()
   render()
 }
@@ -966,6 +1553,7 @@ async function toggleFullscreenMode() {
 
 function startCampaign() {
   const wasRunning = state.gameRunning
+  closeInventory({ resume: false })
   state.transition.active = false
   state.transition.timer = 0
   state.transition.targetLevelIndex = null
@@ -985,6 +1573,7 @@ function startCampaign() {
 
 function startNextLevel() {
   const wasRunning = state.gameRunning
+  closeInventory({ resume: false })
   loadLevel(state.nextLevelIndex, false)
   state.overlayMode = "playing"
   state.nextLevelIndex = null
@@ -999,6 +1588,7 @@ function startNextLevel() {
 }
 
 function finishRun(won) {
+  closeInventory({ resume: false })
   state.gameRunning = false
   state.transition.active = false
   state.transition.timer = 0
@@ -1067,6 +1657,7 @@ function resumeFromDialogue() {
 }
 
 function openNpcDialogue(npc) {
+  closeInventory({ resume: false })
   input.left = false
   input.right = false
   input.guard = false
@@ -1125,6 +1716,7 @@ function update(delta) {
   player.runTime += delta / 60
 
   updateTimers(delta)
+  updateSceneAmbience(delta)
 
   if (state.transition.active) {
     updateAreaTransition(delta)
@@ -1157,6 +1749,7 @@ function update(delta) {
   animateLevel(delta)
   handleBeacons()
   handleJumpPads()
+  collectItems()
   collectCrystals()
 
   if (!state.gameRunning) {
@@ -1219,6 +1812,9 @@ function updateTimers(delta) {
 
   if (player.attackPoseTimer > 0) {
     player.attackPoseTimer = Math.max(0, player.attackPoseTimer - delta)
+    if (player.attackPoseTimer === 0) {
+      player.attackType = ""
+    }
   }
 
   if (player.blastCooldown > 0) {
@@ -1932,12 +2528,24 @@ function projectileHitsSolid(projectile) {
 }
 
 function animateLevel(delta) {
+  state.currentLevel.exits.forEach((exit) => {
+    exit.pulse += 0.06 * delta
+  })
+
   state.currentLevel.beacons.forEach((beacon) => {
     beacon.glow += 0.08 * delta
   })
 
   state.currentLevel.jumpPads.forEach((pad) => {
     pad.bounce = Math.max(0, pad.bounce - 0.12 * delta)
+  })
+
+  state.currentLevel.crystals.forEach((crystal) => {
+    crystal.bob += 0.08 * delta
+  })
+
+  state.currentLevel.items.forEach((item) => {
+    item.bob += 0.07 * delta
   })
 }
 
@@ -1988,12 +2596,72 @@ function handleJumpPads() {
   })
 }
 
+function maybeDropInventoryItem(enemy) {
+  if (!state.currentLevel?.items) {
+    return
+  }
+
+  const roll = Math.random()
+  let itemKey = null
+
+  if (roll < 0.12) {
+    itemKey = "herb"
+  } else if (roll < 0.22) {
+    itemKey = "spirit"
+  } else if (roll < 0.27) {
+    itemKey = "dash"
+  } else if (roll < 0.3) {
+    itemKey = "storm"
+  }
+
+  if (!itemKey) {
+    return
+  }
+
+  state.currentLevel.items.push({
+    id: makeId(),
+    itemKey,
+    x: enemy.x + 1,
+    y: enemy.y + 1,
+    width: 12,
+    height: 12,
+    collected: false,
+    bob: Math.random() * Math.PI * 2
+  })
+
+  setStatus(`Quái rơi ra ${ITEM_DEFINITIONS[itemKey].name}`, 34)
+}
+
+function collectItems() {
+  let collectedItemKey = null
+
+  state.currentLevel.items.forEach((item) => {
+    if (!item.collected && intersects(player, item)) {
+      item.collected = true
+      addItemToInventory(item.itemKey, 1)
+      collectedItemKey = item.itemKey
+      state.screenShake = Math.max(state.screenShake, 0.9)
+      spawnParticles(
+        item.x + item.width / 2,
+        item.y + item.height / 2,
+        12,
+        [ITEM_DEFINITIONS[item.itemKey].color, ITEM_DEFINITIONS[item.itemKey].accent, "#ffffff"],
+        1.5,
+        0.01
+      )
+      playCollectSound()
+    }
+  })
+
+  if (collectedItemKey) {
+    setStatus(`Nhặt được ${ITEM_DEFINITIONS[collectedItemKey].name}`, 40)
+  }
+}
+
 function collectCrystals() {
   let collectedAny = false
 
   state.currentLevel.crystals.forEach((crystal) => {
-    crystal.bob += 0.08
-
     if (!crystal.collected && intersects(player, crystal)) {
       crystal.collected = true
       player.crystals += 1
@@ -2079,6 +2747,7 @@ function respawnPlayer() {
   player.canDash = true
   player.dashTimer = 0
   player.attackPoseTimer = 0
+  player.attackType = ""
   player.isGuarding = false
 
   for (let index = projectiles.length - 1; index >= 0; index -= 1) {
@@ -2111,6 +2780,7 @@ function damagePlayer(amount, direction, shouldRespawn) {
   player.dashTimer = 0
   player.dashCooldown = Math.max(player.dashCooldown, 24)
   player.attackPoseTimer = 0
+  player.attackType = ""
   player.isGuarding = false
   state.screenShake = 3
   spawnParticles(player.x + player.width / 2, player.y + player.height / 2, 16, ["#ef9f8f", "#ffffff", "#d26b3b"], 1.9, 0.04)
@@ -2149,6 +2819,7 @@ function damageEnemy(enemy, amount, direction) {
     enemy.dead = true
     state.screenShake = 1.3
     gainSpirit(8)
+    maybeDropInventoryItem(enemy)
     playEnemyDownSound()
   } else {
     playSlashSound()
@@ -2216,6 +2887,7 @@ function performSlash() {
 
   player.attackCooldown = 18
   player.attackPoseTimer = 10
+  player.attackType = "slash"
   const width = 22
   const height = 14
   const x = player.facing > 0 ? player.x + player.width - 2 : player.x - width + 2
@@ -2247,6 +2919,7 @@ function castBlast() {
   player.spirit -= BLAST_COST
   player.blastCooldown = 28
   player.attackPoseTimer = 8
+  player.attackType = "blast"
 
   projectiles.push({
     id: makeId(),
@@ -2338,6 +3011,399 @@ function drawGlowRect(x, y, width, height, color, alpha = 0.18, padding = 2) {
   ctx.restore()
 }
 
+function createSpriteCanvas(width, height) {
+  const spriteCanvas = document.createElement("canvas")
+  spriteCanvas.width = width
+  spriteCanvas.height = height
+  const spriteCtx = spriteCanvas.getContext("2d")
+  spriteCtx.imageSmoothingEnabled = false
+  return { canvas: spriteCanvas, ctx: spriteCtx }
+}
+
+function drawPlayerSpriteSheetFrame(sheetCtx, offsetX, spec) {
+  const pixel = (x, y, width, height, color) => {
+    sheetCtx.fillStyle = color
+    sheetCtx.fillRect(offsetX + x, y, width, height)
+  }
+
+  const tailPieces = spec.tail || []
+  tailPieces.forEach(([x, y, width, height]) => {
+    pixel(x, y, width, height, "#ff654f")
+  })
+
+  const headY = spec.headY || 0
+  const torsoY = spec.torsoY || 0
+  const backArm = spec.backArm || [4, 8, 2, 3]
+  const frontArm = spec.frontArm || [10, 8, 2, 3]
+  const backLeg = spec.backLeg || [5, 12, 2, 3]
+  const frontLeg = spec.frontLeg || [8, 12, 2, 3]
+
+  pixel(4, 2 + headY, 8, 1, "#10151d")
+  pixel(5, 1 + headY, 6, 1, spec.bandColor || "#78c0ff")
+  pixel(4, 2 + headY, 8, 2, "#2e4f71")
+  pixel(5, 4 + headY, 6, 1, "#25486d")
+  pixel(6, 4 + headY, 4, 4, "#ffcf99")
+  pixel(8, 5 + headY, 1, 1, "#101010")
+  pixel(9, 4 + headY, 1, 1, "#ffe59a")
+
+  pixel(backArm[0], backArm[1], backArm[2], backArm[3], spec.backArmColor || "#1d3552")
+  pixel(4, 8 + torsoY, 8, 1, "#10151d")
+  pixel(4, 9 + torsoY, 8, 2, "#d26045")
+  pixel(5, 9 + torsoY, 6, 1, "#f7d98b")
+  pixel(5, 11 + torsoY, 6, 1, "#1b2633")
+  pixel(frontArm[0], frontArm[1], frontArm[2], frontArm[3], spec.frontArmColor || "#274878")
+  pixel(backLeg[0], backLeg[1], backLeg[2], backLeg[3], "#203a66")
+  pixel(frontLeg[0], frontLeg[1], frontLeg[2], frontLeg[3], "#274878")
+  pixel(backLeg[0], backLeg[1] + backLeg[3], backLeg[2], 1, "#101010")
+  pixel(frontLeg[0], frontLeg[1] + frontLeg[3], frontLeg[2], 1, "#101010")
+
+  if (spec.accent) {
+    spec.accent.forEach(([x, y, width, height, color]) => {
+      pixel(x, y, width, height, color)
+    })
+  }
+
+  if (spec.weapon === "slash") {
+    pixel(11, 7, 3, 2, "#ffe59a")
+    pixel(12, 6, 2, 1, "#ffffff")
+    pixel(13, 8, 1, 1, "#fff5d6")
+  } else if (spec.weapon === "blast") {
+    pixel(11, 7, 2, 3, "#7af5ff")
+    pixel(13, 8, 1, 1, "#ffffff")
+    pixel(12, 6, 1, 1, "#8ab6ff")
+  } else if (spec.weapon === "guard") {
+    pixel(3, 8, 2, 3, "#7af5ff")
+    pixel(11, 8, 2, 3, "#7af5ff")
+    pixel(2, 9, 1, 1, "#dfffff")
+    pixel(13, 9, 1, 1, "#dfffff")
+  }
+}
+
+function buildPlayerSpriteSheet() {
+  const frames = [
+    {
+      animation: "idle",
+      spec: {
+        tail: [
+          [2, 6, 3, 1],
+          [0, 7, 3, 1]
+        ]
+      }
+    },
+    {
+      animation: "idle",
+      spec: {
+        headY: 1,
+        tail: [
+          [2, 5, 3, 1],
+          [0, 6, 3, 1]
+        ],
+        frontLeg: [8, 11, 2, 4],
+        backArm: [4, 9, 2, 2],
+        frontArm: [10, 7, 2, 3]
+      }
+    },
+    {
+      animation: "run",
+      spec: {
+        tail: [
+          [1, 5, 4, 1],
+          [0, 6, 3, 1]
+        ],
+        backArm: [4, 9, 2, 2],
+        frontArm: [10, 7, 2, 3],
+        backLeg: [5, 11, 2, 4],
+        frontLeg: [8, 12, 2, 2]
+      }
+    },
+    {
+      animation: "run",
+      spec: {
+        tail: [
+          [1, 6, 4, 1],
+          [0, 7, 3, 1]
+        ],
+        backArm: [4, 7, 2, 3],
+        frontArm: [10, 9, 2, 2],
+        backLeg: [5, 12, 2, 2],
+        frontLeg: [8, 11, 2, 4]
+      }
+    },
+    {
+      animation: "run",
+      spec: {
+        headY: 1,
+        tail: [
+          [2, 5, 4, 1],
+          [0, 6, 4, 1]
+        ],
+        backArm: [4, 9, 2, 2],
+        frontArm: [10, 7, 2, 3],
+        backLeg: [5, 10, 2, 5],
+        frontLeg: [8, 12, 2, 2]
+      }
+    },
+    {
+      animation: "run",
+      spec: {
+        tail: [
+          [2, 6, 4, 1],
+          [0, 7, 4, 1]
+        ],
+        backArm: [4, 7, 2, 3],
+        frontArm: [10, 9, 2, 2],
+        backLeg: [5, 12, 2, 2],
+        frontLeg: [8, 10, 2, 5]
+      }
+    },
+    {
+      animation: "jump",
+      spec: {
+        tail: [
+          [3, 4, 3, 1],
+          [1, 5, 3, 1]
+        ],
+        backArm: [4, 7, 2, 3],
+        frontArm: [10, 7, 2, 3],
+        backLeg: [5, 11, 2, 2],
+        frontLeg: [8, 11, 2, 2],
+        accent: [[6, 12, 3, 1, "#7af5ff"]]
+      }
+    },
+    {
+      animation: "fall",
+      spec: {
+        tail: [
+          [1, 4, 4, 1],
+          [0, 5, 4, 1]
+        ],
+        backArm: [4, 8, 2, 3],
+        frontArm: [10, 8, 2, 3],
+        backLeg: [4, 12, 2, 3],
+        frontLeg: [9, 12, 2, 3]
+      }
+    },
+    {
+      animation: "dash",
+      spec: {
+        tail: [
+          [1, 5, 5, 1],
+          [0, 6, 5, 1],
+          [0, 7, 4, 1]
+        ],
+        headY: 1,
+        torsoY: -1,
+        backArm: [5, 9, 2, 2],
+        frontArm: [10, 7, 3, 2],
+        backLeg: [6, 11, 2, 3],
+        frontLeg: [9, 11, 2, 3],
+        accent: [[12, 8, 2, 1, "#ffe59a"]]
+      }
+    },
+    {
+      animation: "dash",
+      spec: {
+        tail: [
+          [0, 5, 5, 1],
+          [0, 6, 5, 1],
+          [0, 7, 4, 1]
+        ],
+        torsoY: -1,
+        backArm: [5, 8, 2, 2],
+        frontArm: [10, 8, 3, 2],
+        backLeg: [6, 11, 2, 3],
+        frontLeg: [9, 11, 2, 3],
+        accent: [[12, 7, 2, 1, "#ffffff"]]
+      }
+    },
+    {
+      animation: "slash",
+      spec: {
+        tail: [
+          [2, 6, 4, 1],
+          [0, 7, 4, 1]
+        ],
+        backArm: [4, 9, 2, 2],
+        frontArm: [10, 6, 2, 4],
+        backLeg: [5, 12, 2, 3],
+        frontLeg: [8, 11, 2, 4],
+        weapon: "slash"
+      }
+    },
+    {
+      animation: "slash",
+      spec: {
+        tail: [
+          [1, 5, 4, 1],
+          [0, 6, 3, 1]
+        ],
+        headY: 1,
+        backArm: [4, 8, 2, 3],
+        frontArm: [10, 7, 3, 3],
+        backLeg: [5, 12, 2, 2],
+        frontLeg: [8, 11, 2, 4],
+        weapon: "slash",
+        accent: [[12, 7, 2, 1, "#fff5d6"]]
+      }
+    },
+    {
+      animation: "blast",
+      spec: {
+        tail: [
+          [2, 5, 4, 1],
+          [0, 6, 4, 1]
+        ],
+        backArm: [4, 9, 2, 2],
+        frontArm: [10, 7, 2, 3],
+        backLeg: [5, 12, 2, 3],
+        frontLeg: [8, 11, 2, 4],
+        weapon: "blast"
+      }
+    },
+    {
+      animation: "blast",
+      spec: {
+        tail: [
+          [1, 5, 5, 1],
+          [0, 6, 4, 1]
+        ],
+        headY: 1,
+        backArm: [4, 9, 2, 2],
+        frontArm: [10, 7, 3, 3],
+        backLeg: [5, 12, 2, 2],
+        frontLeg: [8, 11, 2, 4],
+        weapon: "blast",
+        accent: [[12, 6, 1, 1, "#dfffff"]]
+      }
+    },
+    {
+      animation: "guard",
+      spec: {
+        tail: [
+          [3, 6, 3, 1],
+          [1, 7, 3, 1]
+        ],
+        backArm: [4, 8, 2, 3],
+        frontArm: [10, 8, 2, 3],
+        backLeg: [5, 12, 2, 3],
+        frontLeg: [8, 12, 2, 3],
+        weapon: "guard",
+        bandColor: "#8ce6ff",
+        accent: [[6, 12, 3, 1, "#dfffff"]]
+      }
+    },
+    {
+      animation: "guard",
+      spec: {
+        headY: 1,
+        tail: [
+          [2, 5, 3, 1],
+          [0, 6, 3, 1]
+        ],
+        backArm: [4, 8, 2, 3],
+        frontArm: [10, 8, 2, 3],
+        backLeg: [5, 12, 2, 3],
+        frontLeg: [8, 12, 2, 3],
+        weapon: "guard",
+        bandColor: "#8ce6ff",
+        accent: [[6, 11, 3, 1, "#dfffff"]]
+      }
+    }
+  ]
+
+  const frameSize = PLAYER_SPRITE_FRAME_SIZE
+  const { canvas: spriteCanvas, ctx: spriteCtx } = createSpriteCanvas(frameSize * frames.length, frameSize)
+  const animations = {}
+
+  frames.forEach((frame, frameIndex) => {
+    if (!animations[frame.animation]) {
+      animations[frame.animation] = []
+    }
+
+    animations[frame.animation].push(frameIndex)
+    drawPlayerSpriteSheetFrame(spriteCtx, frameIndex * frameSize, frame.spec)
+  })
+
+  return {
+    canvas: spriteCanvas,
+    frameSize,
+    animations
+  }
+}
+
+function getPlayerSpriteSheet() {
+  if (!spriteSheets.player) {
+    spriteSheets.player = buildPlayerSpriteSheet()
+  }
+
+  return spriteSheets.player
+}
+
+function getPlayerAnimationName() {
+  if (player.dashTimer > 0) {
+    return "dash"
+  }
+
+  if (player.isGuarding) {
+    return "guard"
+  }
+
+  if (player.attackPoseTimer > 0) {
+    return player.attackType === "blast" ? "blast" : "slash"
+  }
+
+  if (!player.grounded) {
+    return player.velocityY < 0 ? "jump" : "fall"
+  }
+
+  if (Math.abs(player.velocityX) > 0.28) {
+    return "run"
+  }
+
+  return "idle"
+}
+
+function getPlayerAnimationFrame(animationName) {
+  const spriteSheet = getPlayerSpriteSheet()
+  const frames = spriteSheet.animations[animationName] || spriteSheet.animations.idle
+  let localFrame = 0
+
+  if (animationName === "idle") {
+    localFrame = Math.floor(player.runTime * 3.2) % frames.length
+  } else if (animationName === "run") {
+    localFrame = Math.floor(player.runTime * 11.5) % frames.length
+  } else if (animationName === "guard") {
+    localFrame = Math.floor(player.runTime * 4.5) % frames.length
+  } else if (animationName === "dash") {
+    localFrame = player.dashTimer > DASH_DURATION * 0.5 ? 0 : frames.length - 1
+  } else if (animationName === "slash") {
+    localFrame = player.attackPoseTimer > 5 ? 0 : Math.min(1, frames.length - 1)
+  } else if (animationName === "blast") {
+    localFrame = player.attackPoseTimer > 4 ? 0 : Math.min(1, frames.length - 1)
+  }
+
+  return frames[localFrame] ?? frames[0]
+}
+
+function drawPlayerSprite(frameIndex, x, y, facing, alpha = 1) {
+  const spriteSheet = getPlayerSpriteSheet()
+  const frameSize = spriteSheet.frameSize
+  const sourceX = frameIndex * frameSize
+
+  ctx.save()
+  ctx.globalAlpha = alpha
+
+  if (facing < 0) {
+    ctx.translate(Math.round(x) + frameSize, Math.round(y))
+    ctx.scale(-1, 1)
+    ctx.drawImage(spriteSheet.canvas, sourceX, 0, frameSize, frameSize, 0, 0, frameSize, frameSize)
+  } else {
+    ctx.drawImage(spriteSheet.canvas, sourceX, 0, frameSize, frameSize, Math.round(x), Math.round(y), frameSize, frameSize)
+  }
+
+  ctx.restore()
+}
+
 function render() {
   const shakeX = state.screenShake > 0 ? (Math.random() - 0.5) * state.screenShake : 0
   const shakeY = state.screenShake > 0 ? (Math.random() - 0.5) * state.screenShake : 0
@@ -2348,10 +3414,12 @@ function render() {
 
   drawSky()
   drawParallax()
+  drawSceneAmbience()
   drawTiles()
   drawJumpPads()
   drawExits()
   drawBeacons()
+  drawItems()
   drawNpcs()
   drawCrystals()
   drawEnemies()
@@ -2370,58 +3438,290 @@ function render() {
   }
 }
 
+function drawMistBand(y, height, topColor, bottomColor) {
+  const mist = ctx.createLinearGradient(0, y, 0, y + height)
+  mist.addColorStop(0, topColor)
+  mist.addColorStop(1, bottomColor)
+  ctx.fillStyle = mist
+  ctx.fillRect(camera.x, y, canvas.width, height)
+}
+
+function drawBackdropHouse(x, groundY, width, height, mainColor, roofColor, lightColor) {
+  ctx.fillStyle = mainColor
+  ctx.fillRect(x, groundY - height, width, height)
+  ctx.fillStyle = roofColor
+  ctx.fillRect(x - 6, groundY - height - 4, width + 12, 4)
+  ctx.fillRect(x - 2, groundY - height - 8, width + 4, 4)
+  ctx.fillStyle = "rgba(255,255,255,0.08)"
+  ctx.fillRect(x + 3, groundY - height + 2, width - 6, 2)
+  ctx.fillStyle = lightColor
+  ctx.fillRect(x + 4, groundY - height + 7, 3, 4)
+  ctx.fillRect(x + width - 7, groundY - height + 7, 3, 4)
+}
+
+function drawBackdropTower(x, groundY, width, height, mainColor, accentColor) {
+  ctx.fillStyle = mainColor
+  ctx.fillRect(x, groundY - height, width, height)
+  ctx.fillRect(x - 4, groundY - height + 10, 4, height - 10)
+  ctx.fillRect(x + width, groundY - height + 12, 4, height - 12)
+  ctx.fillStyle = accentColor
+  ctx.fillRect(x + 4, groundY - height + 8, width - 8, 2)
+  ctx.fillRect(x + 5, groundY - height + 18, width - 10, 2)
+  ctx.fillRect(x + Math.floor(width / 2) - 2, groundY - height + 26, 4, 8)
+}
+
+function drawBackdropTorii(x, groundY, mainColor, accentColor) {
+  ctx.fillStyle = mainColor
+  ctx.fillRect(x + 3, groundY - 32, 4, 32)
+  ctx.fillRect(x + 21, groundY - 32, 4, 32)
+  ctx.fillRect(x, groundY - 31, 28, 4)
+  ctx.fillRect(x - 3, groundY - 36, 34, 4)
+  ctx.fillStyle = accentColor
+  ctx.fillRect(x + 5, groundY - 23, 2, 10)
+  ctx.fillRect(x + 21, groundY - 23, 2, 10)
+}
+
+function drawBackdropLantern(x, groundY, mainColor, glowColor) {
+  ctx.fillStyle = mainColor
+  ctx.fillRect(x + 3, groundY - 16, 2, 16)
+  ctx.fillRect(x + 1, groundY - 18, 6, 2)
+  ctx.fillStyle = glowColor
+  ctx.fillRect(x, groundY - 23, 8, 6)
+  ctx.fillStyle = "rgba(255,255,255,0.45)"
+  ctx.fillRect(x + 2, groundY - 22, 4, 2)
+}
+
+function drawBackdropBamboo(x, groundY, mainColor, accentColor) {
+  for (let stem = 0; stem < 3; stem += 1) {
+    const stemX = x + stem * 5
+    const stemHeight = 24 + stem * 6
+    ctx.fillStyle = mainColor
+    ctx.fillRect(stemX, groundY - stemHeight, 3, stemHeight)
+    ctx.fillStyle = accentColor
+    ctx.fillRect(stemX, groundY - stemHeight + 5, 3, 1)
+    ctx.fillRect(stemX, groundY - stemHeight + 13, 3, 1)
+    ctx.fillRect(stemX, groundY - stemHeight + 20, 3, 1)
+    ctx.fillRect(stemX - 3, groundY - stemHeight + 10, 3, 2)
+    ctx.fillRect(stemX + 3, groundY - stemHeight + 15, 3, 2)
+  }
+}
+
+function drawSceneStructures(theme, horizonY) {
+  const main = theme.detailMain
+  const accent = theme.detailAccent
+  const repeatOffset = -(camera.x * 0.18) % 230
+
+  ctx.save()
+  ctx.globalAlpha = 0.9
+
+  for (let index = -1; index < 4; index += 1) {
+    const baseX = repeatOffset + index * 230
+
+    if (theme.detailType === "village") {
+      drawBackdropHouse(baseX + 18, horizonY + 9, 34, 18, main, accent, "rgba(255, 232, 177, 0.38)")
+      drawBackdropHouse(baseX + 74, horizonY + 12, 24, 14, main, accent, "rgba(255, 232, 177, 0.3)")
+      drawBackdropTorii(baseX + 132, horizonY + 14, main, accent)
+      drawBackdropBamboo(baseX + 182, horizonY + 15, theme.floraColor, theme.floraAccent)
+    } else if (theme.detailType === "dojo") {
+      drawBackdropHouse(baseX + 10, horizonY + 12, 46, 19, main, accent, "rgba(255, 229, 160, 0.34)")
+      drawBackdropHouse(baseX + 66, horizonY + 14, 28, 13, main, accent, "rgba(255, 229, 160, 0.26)")
+      drawBackdropTower(baseX + 134, horizonY + 14, 18, 30, main, accent)
+      drawBackdropLantern(baseX + 178, horizonY + 18, main, "rgba(255, 218, 132, 0.34)")
+    } else if (theme.detailType === "ruins") {
+      drawBackdropTorii(baseX + 16, horizonY + 16, main, accent)
+      drawBackdropTower(baseX + 78, horizonY + 14, 16, 26, main, accent)
+      drawBackdropTower(baseX + 102, horizonY + 18, 12, 18, main, accent)
+      drawBackdropHouse(baseX + 150, horizonY + 14, 30, 13, main, accent, "rgba(207, 247, 236, 0.2)")
+    } else if (theme.detailType === "pass") {
+      drawBackdropTorii(baseX + 18, horizonY + 16, main, accent)
+      drawBackdropLantern(baseX + 66, horizonY + 20, main, "rgba(255, 176, 176, 0.34)")
+      drawBackdropTower(baseX + 124, horizonY + 16, 14, 28, main, accent)
+      drawBackdropLantern(baseX + 172, horizonY + 18, main, "rgba(255, 176, 176, 0.34)")
+    } else {
+      drawBackdropTower(baseX + 12, horizonY + 16, 22, 34, main, accent)
+      drawBackdropTower(baseX + 54, horizonY + 18, 14, 26, main, accent)
+      drawBackdropTower(baseX + 118, horizonY + 14, 24, 40, main, accent)
+      drawBackdropTower(baseX + 170, horizonY + 20, 12, 22, main, accent)
+    }
+  }
+
+  ctx.restore()
+}
+
+function drawSceneFlora(theme, horizonY) {
+  const repeatOffset = -(camera.x * 0.56) % 58
+  ctx.save()
+  ctx.globalAlpha = 0.9
+
+  for (let index = -1; index < 10; index += 1) {
+    const x = repeatOffset + index * 58
+
+    if (theme.detailType === "fortress") {
+      ctx.fillStyle = theme.floraColor
+      ctx.fillRect(x + 6, horizonY + 17, 4, 14)
+      ctx.fillRect(x + 12, horizonY + 12, 5, 19)
+      ctx.fillRect(x + 20, horizonY + 18, 4, 13)
+      ctx.fillStyle = theme.floraAccent
+      ctx.fillRect(x + 13, horizonY + 8, 3, 3)
+      ctx.fillRect(x + 7, horizonY + 14, 2, 2)
+    } else if (theme.detailType === "pass") {
+      drawBackdropLantern(x + 6, horizonY + 28, theme.floraColor, "rgba(255, 191, 187, 0.28)")
+      drawBackdropBamboo(x + 18, horizonY + 31, theme.floraColor, theme.floraAccent)
+    } else {
+      drawBackdropBamboo(x + 8, horizonY + 29, theme.floraColor, theme.floraAccent)
+    }
+  }
+
+  ctx.restore()
+}
+
+function drawSceneAmbience() {
+  if (!sceneAmbience.length) {
+    return
+  }
+
+  const viewLeft = camera.x - 28
+  const viewTop = camera.y - 24
+  const viewRight = camera.x + canvas.width + 28
+  const viewBottom = camera.y + canvas.height + 28
+
+  sceneAmbience.forEach((particle) => {
+    if (particle.x < viewLeft || particle.x > viewRight || particle.y < viewTop || particle.y > viewBottom) {
+      return
+    }
+
+    const pulse = 0.76 + (Math.sin(player.runTime * 2.2 + particle.phase * 1.6) + 1) * 0.12
+    const drawX = Math.round(particle.x)
+    const drawY = Math.round(particle.y)
+    const size = Math.max(1, Math.round(particle.size))
+
+    ctx.save()
+    ctx.globalAlpha = particle.alpha * pulse
+
+    if (particle.type === "leaf") {
+      ctx.translate(drawX, drawY)
+      ctx.rotate(particle.rotation)
+      ctx.fillStyle = particle.color
+      ctx.fillRect(-size, -1, size * 2, 2)
+      ctx.fillRect(-1, -size, 2, size * 2)
+      ctx.fillStyle = "rgba(255,255,255,0.35)"
+      ctx.fillRect(0, -1, 1, 2)
+    } else if (particle.type === "ember" && particle.isSmoke) {
+      ctx.fillStyle = particle.color
+      ctx.fillRect(drawX - size, drawY - Math.floor(size / 2), size * 2, size)
+      ctx.fillRect(drawX - Math.floor(size / 2), drawY - size, size, size * 2)
+    } else if (particle.type === "ember") {
+      ctx.fillStyle = particle.color
+      ctx.fillRect(drawX - size, drawY - size, size * 2, size * 2)
+      ctx.globalAlpha = particle.alpha * 0.28
+      ctx.fillStyle = "#ffd18f"
+      ctx.fillRect(drawX - size - 1, drawY - size - 1, size * 2 + 2, size * 2 + 2)
+    } else if (particle.type === "ash") {
+      ctx.translate(drawX, drawY)
+      ctx.rotate(particle.rotation)
+      ctx.fillStyle = particle.color
+      ctx.fillRect(-size, -1, size * 2, 2)
+      ctx.fillRect(-1, -size, 2, size * 2)
+    } else {
+      ctx.fillStyle = particle.color
+      ctx.fillRect(drawX, drawY, size, size)
+      ctx.globalAlpha = particle.alpha * 0.25
+      ctx.fillRect(drawX - 1, drawY - 1, size + 2, size + 2)
+    }
+
+    ctx.restore()
+  })
+}
+
 function drawSky() {
   const palette = getCurrentPalette()
+  const theme = getCurrentSceneTheme()
+  const horizonY = state.currentLevel.height - 88
   const gradient = ctx.createLinearGradient(0, camera.y, 0, camera.y + canvas.height)
   gradient.addColorStop(0, palette.skyTop)
+  gradient.addColorStop(0.54, theme.skyMid)
   gradient.addColorStop(1, palette.skyBottom)
   ctx.fillStyle = gradient
   ctx.fillRect(camera.x, camera.y, canvas.width, canvas.height)
 
-  const sunX = camera.x + canvas.width * 0.76
-  const sunY = camera.y + 36
-  const sunGlow = ctx.createRadialGradient(sunX, sunY, 8, sunX, sunY, 44)
-  sunGlow.addColorStop(0, "rgba(255, 247, 210, 0.95)")
-  sunGlow.addColorStop(0.35, "rgba(255, 224, 142, 0.38)")
-  sunGlow.addColorStop(1, "rgba(255, 224, 142, 0)")
-  ctx.fillStyle = sunGlow
-  ctx.fillRect(sunX - 44, sunY - 44, 88, 88)
+  const topShade = ctx.createLinearGradient(0, camera.y, 0, camera.y + 72)
+  topShade.addColorStop(0, "rgba(10, 16, 28, 0.18)")
+  topShade.addColorStop(1, "rgba(10, 16, 28, 0)")
+  ctx.fillStyle = topShade
+  ctx.fillRect(camera.x, camera.y, canvas.width, 72)
 
-  for (let index = 0; index < 7; index += 1) {
-    const sparkleX = camera.x + 18 + index * 52 + (index % 2) * 12
-    const sparkleY = camera.y + 14 + (index % 3) * 11
-    const sparkleAlpha = 0.12 + (Math.sin(player.runTime * 1.7 + index) + 1) * 0.06
-    ctx.fillStyle = `rgba(255,255,255,${sparkleAlpha})`
+  const orbX = camera.x + canvas.width * (theme.detailType === "fortress" ? 0.78 : 0.74)
+  const orbY = camera.y + (theme.detailType === "fortress" ? 42 : 34)
+  const orbGlow = ctx.createRadialGradient(orbX, orbY, 10, orbX, orbY, 58)
+  orbGlow.addColorStop(0, theme.glowColor)
+  orbGlow.addColorStop(0.25, theme.glowHalo)
+  orbGlow.addColorStop(1, "rgba(255, 226, 142, 0)")
+  ctx.fillStyle = orbGlow
+  ctx.fillRect(orbX - 58, orbY - 58, 116, 116)
+
+  ctx.fillStyle = theme.glowColor
+  ctx.globalAlpha = theme.detailType === "fortress" ? 0.72 : 0.88
+  ctx.beginPath()
+  ctx.arc(orbX, orbY, theme.detailType === "fortress" ? 13 : 15, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.globalAlpha = 1
+
+  drawMistBand(horizonY - 50, 74, theme.hazeTop, theme.hazeBottom)
+
+  for (let index = 0; index < 8; index += 1) {
+    const sparkleX = camera.x + 20 + index * 46 + (index % 2) * 11
+    const sparkleY = camera.y + 16 + (index % 4) * 9
+    const sparkleAlpha = 0.08 + (Math.sin(player.runTime * 1.6 + index * 0.8) + 1) * 0.04
+    ctx.fillStyle = theme.sparkleColor.replace(/[\d.]+\)$/u, `${sparkleAlpha})`)
     ctx.fillRect(sparkleX, sparkleY, 2, 2)
     ctx.fillRect(sparkleX + 1, sparkleY - 1, 1, 4)
     ctx.fillRect(sparkleX - 1, sparkleY + 1, 4, 1)
   }
 
+  for (let index = 0; index < 4; index += 1) {
+    const cloudX = camera.x * 0.14 + index * 118 + (index % 2) * 26
+    const cloudY = camera.y + 18 + index * 10
+    drawCloud(cloudX, cloudY, 1.18, theme.cloudColor, theme.cloudShade)
+  }
+
   for (let index = 0; index < 5; index += 1) {
-    const cloudX = camera.x * 0.25 + index * 88 + (index % 2) * 30
-    const cloudY = camera.y * 0.08 + 18 + index * 9
-    drawCloud(cloudX, cloudY)
+    const cloudX = camera.x * 0.24 + index * 90 - (index % 2) * 22
+    const cloudY = camera.y + 32 + index * 7
+    drawCloud(cloudX, cloudY, 0.86, "rgba(255,255,255,0.52)", "rgba(195, 228, 255, 0.12)")
   }
 }
 
 function drawParallax() {
   const palette = getCurrentPalette()
+  const theme = getCurrentSceneTheme()
   const horizonY = state.currentLevel.height - 88
 
-  ctx.fillStyle = "rgba(255, 231, 176, 0.12)"
-  ctx.fillRect(camera.x, horizonY + 8, canvas.width, 20)
+  drawMistBand(horizonY + 4, 22, "rgba(255, 236, 194, 0.12)", "rgba(255, 210, 154, 0)")
 
-  ctx.fillStyle = palette.hillBack
-  for (let index = 0; index < 9; index += 1) {
-    const baseX = index * 70 - (camera.x * 0.25) % 70
-    drawHill(baseX, horizonY + 16, 62, 28)
+  ctx.fillStyle = theme.ridgeBack
+  for (let index = 0; index < 10; index += 1) {
+    const baseX = index * 66 - (camera.x * 0.2) % 66
+    drawHill(baseX, horizonY + 16, 68, 30 + (index % 3) * 5)
   }
+
+  drawSceneStructures(theme, horizonY)
+  drawMistBand(
+    horizonY + 10 + Math.sin(player.runTime * 1.4) * 2,
+    18,
+    "rgba(255, 240, 217, 0.12)",
+    "rgba(255, 240, 217, 0)"
+  )
 
   ctx.fillStyle = palette.hillFront
-  for (let index = 0; index < 7; index += 1) {
-    const baseX = index * 94 - (camera.x * 0.42) % 94
-    drawHill(baseX, horizonY + 30, 80, 40)
+  for (let index = 0; index < 8; index += 1) {
+    const baseX = index * 90 - (camera.x * 0.38) % 90
+    drawHill(baseX, horizonY + 30, 84, 44 + (index % 2) * 5)
   }
+
+  ctx.fillStyle = "rgba(11, 19, 27, 0.14)"
+  ctx.fillRect(camera.x, horizonY + 18, canvas.width, 26)
+
+  drawSceneFlora(theme, horizonY)
 }
 
 function drawTiles() {
@@ -2544,6 +3844,29 @@ function drawBeacons() {
     ctx.fillRect(beacon.x + 4, beacon.y + 1 - flameLift, 6, 7)
     ctx.fillStyle = beacon.active ? "rgba(248, 210, 107, 0.22)" : "rgba(139, 112, 82, 0.15)"
     ctx.fillRect(beacon.x - 3, beacon.y - 4, 20, 30)
+  })
+}
+
+function drawItems() {
+  state.currentLevel.items.forEach((item) => {
+    if (item.collected) {
+      return
+    }
+
+    const definition = ITEM_DEFINITIONS[item.itemKey]
+    const bobOffset = Math.sin(item.bob) * 2
+    const drawY = item.y - bobOffset
+
+    drawGlowRect(item.x, drawY, item.width, item.height, definition.color, 0.14, 2)
+    ctx.fillStyle = definition.color
+    ctx.fillRect(item.x + 1, drawY + 2, item.width - 2, item.height - 4)
+    ctx.fillStyle = definition.accent
+    ctx.fillRect(item.x + 2, drawY + 3, item.width - 4, 3)
+    ctx.fillStyle = "#13202d"
+    ctx.fillRect(item.x + 4, drawY + 5, item.width - 8, item.height - 8)
+    ctx.fillStyle = "#ffffff"
+    ctx.fillRect(item.x + 5, drawY + 1, 2, 2)
+    ctx.fillRect(item.x + 4, drawY + item.height - 3, 4, 1)
   })
 }
 
@@ -2737,17 +4060,19 @@ function drawPlayer() {
 
   const bob = player.grounded && Math.abs(player.velocityX) > 0.12 ? Math.sin(player.runTime * 18) * 0.5 : 0
   const bodyY = Math.round(player.y + bob)
-  const scarfDrift = Math.round((Math.sin(player.runTime * 14) * 1.2 + Math.abs(player.velocityX) * 1.8 + player.dashTimer * 0.2) * player.facing)
+  const spriteX = player.x - 2
+  const spriteY = bodyY
+  const animationName = getPlayerAnimationName()
+  const frameIndex = getPlayerAnimationFrame(animationName)
   drawGroundShadow(player.x, player.y + player.height - 1, player.width, 0.22)
 
   if (player.dashTimer > 0) {
     for (let ghost = 3; ghost >= 1; ghost -= 1) {
       const offset = player.facing * ghost * 4
-      const alpha = 0.1 + ghost * 0.05
-      ctx.fillStyle = `rgba(255, 229, 154, ${alpha})`
-      ctx.fillRect(player.x - offset + 2, bodyY + 3, 8, 9)
+      const alpha = 0.08 + ghost * 0.05
+      drawPlayerSprite(frameIndex, spriteX - offset, spriteY, player.facing, alpha)
     }
-    drawGlowRect(player.x + 2, bodyY + 2, 8, 10, "#ffe59a", 0.12, 3)
+    drawGlowRect(player.x + 1, bodyY + 1, 10, 12, "#ffe59a", 0.14, 3)
   }
 
   if (player.isGuarding) {
@@ -2756,58 +4081,20 @@ function drawPlayer() {
     ctx.fillRect(player.x - 3, bodyY - 2, player.width + 6, player.height + 4)
   }
 
-  ctx.fillStyle = "#11161d"
-  ctx.fillRect(player.x + 1, bodyY + 1, 10, 13)
-  ctx.fillStyle = "#ff654f"
-  if (player.facing > 0) {
-    ctx.fillRect(player.x - 2 - scarfDrift, bodyY + 6, 5, 2)
-    ctx.fillRect(player.x - 4 - scarfDrift, bodyY + 7, 4, 1)
-  } else {
-    ctx.fillRect(player.x + 9 - scarfDrift, bodyY + 6, 5, 2)
-    ctx.fillRect(player.x + 12 - scarfDrift, bodyY + 7, 4, 1)
-  }
-
-  ctx.fillStyle = "#2e4f71"
-  ctx.fillRect(player.x + 3, bodyY + 2, 6, 3)
-  ctx.fillStyle = "#78c0ff"
-  ctx.fillRect(player.x + 3, bodyY + 2, 6, 1)
-  ctx.fillStyle = "#ffcf99"
-  ctx.fillRect(player.x + 4, bodyY + 4, 4, 4)
-  ctx.fillStyle = "#d26045"
-  ctx.fillRect(player.x + 2, bodyY + 8, 8, 3)
-  ctx.fillStyle = "#f7d98b"
-  ctx.fillRect(player.x + 3, bodyY + 8, 6, 1)
-  ctx.fillStyle = "#203a66"
-  ctx.fillRect(player.x + 2, bodyY + 11, 3, 3)
-  ctx.fillRect(player.x + 7, bodyY + 11, 3, 3)
-  ctx.fillStyle = "#101010"
-  ctx.fillRect(player.x + 2, bodyY + 14, 3, 1)
-  ctx.fillRect(player.x + 7, bodyY + 14, 3, 1)
-  ctx.fillStyle = "#101010"
-  ctx.fillRect(player.x + (player.facing > 0 ? 7 : 5), bodyY + 5, 1, 1)
-  ctx.fillStyle = "#ffe59a"
-  ctx.fillRect(player.x + (player.facing > 0 ? 8 : 4), bodyY + 3, 1, 1)
+  drawPlayerSprite(frameIndex, spriteX, spriteY, player.facing, 1)
 
   if (player.attackPoseTimer > 0) {
+    const glowX = player.facing > 0 ? player.x + 10 : player.x - 2
+    const glowColor = player.attackType === "blast" ? "#7af5ff" : "#ffe59a"
     drawGlowRect(
-      player.facing > 0 ? player.x + 10 : player.x - 2,
+      glowX,
       bodyY + 7,
       4,
       3,
-      "#ffe59a",
+      glowColor,
       0.22,
       2
     )
-    ctx.fillStyle = "#ffe59a"
-    if (player.facing > 0) {
-      ctx.fillRect(player.x + 10, bodyY + 8, 4, 2)
-      ctx.fillStyle = "#ffffff"
-      ctx.fillRect(player.x + 11, bodyY + 7, 3, 1)
-    } else {
-      ctx.fillRect(player.x - 2, bodyY + 8, 4, 2)
-      ctx.fillStyle = "#ffffff"
-      ctx.fillRect(player.x - 2, bodyY + 7, 3, 1)
-    }
   }
 
   if (player.canDash && player.dashCooldown <= 0) {
@@ -2829,11 +4116,15 @@ function drawBlock(x, y, topColor, sideColor) {
   ctx.fillRect(x + 10, y + 10, 3, 2)
 }
 
-function drawCloud(x, y) {
-  ctx.fillStyle = "rgba(255, 255, 255, 0.72)"
-  ctx.fillRect(x, y, 18, 6)
-  ctx.fillRect(x + 5, y - 4, 14, 6)
-  ctx.fillRect(x + 12, y + 2, 14, 5)
+function drawCloud(x, y, scale = 1, fillColor = "rgba(255, 255, 255, 0.72)", shadeColor = "rgba(173, 224, 255, 0.18)") {
+  const unit = Math.max(1, Math.round(scale * 5))
+  ctx.fillStyle = shadeColor
+  ctx.fillRect(Math.round(x - unit), Math.round(y + unit * 0.8), unit * 7, unit * 2)
+  ctx.fillStyle = fillColor
+  ctx.fillRect(Math.round(x), Math.round(y), unit * 4, unit * 2)
+  ctx.fillRect(Math.round(x + unit), Math.round(y - unit), unit * 4, unit * 2)
+  ctx.fillRect(Math.round(x + unit * 3), Math.round(y + unit * 0.3), unit * 4, unit * 2)
+  ctx.fillRect(Math.round(x + unit * 2), Math.round(y + unit), unit * 3, unit)
 }
 
 function drawHill(x, y, width, height) {
@@ -2855,6 +4146,26 @@ function formatTime(totalSeconds) {
 
 function setKeyState(event, pressed) {
   const { code } = event
+
+  if (code === "KeyB" && pressed) {
+    toggleInventory()
+    return
+  }
+
+  if (state.inventoryOpen) {
+    if ((code === "Escape" || code === "KeyB") && pressed) {
+      closeInventory()
+      return
+    }
+
+    const inventoryItemKey = getInventoryItemKeyFromCode(code)
+    if (inventoryItemKey && pressed) {
+      useInventoryItem(inventoryItemKey)
+      return
+    }
+
+    return
+  }
 
   if (code === "ArrowLeft" || code === "KeyA") {
     input.left = pressed
@@ -2903,7 +4214,13 @@ window.addEventListener("keydown", (event) => {
       "ShiftLeft",
       "ShiftRight",
       "KeyF",
-      "KeyE"
+      "KeyE",
+      "KeyB",
+      "Escape",
+      "Digit1",
+      "Digit2",
+      "Digit3",
+      "Digit4"
     ].includes(event.code)
   ) {
     event.preventDefault()
@@ -2961,6 +4278,26 @@ rotateFullscreenButtonEl.addEventListener("click", () => {
 
 hudToggleButtonEl.addEventListener("click", () => {
   toggleBottomHud()
+})
+
+inventoryButtonEl.addEventListener("click", () => {
+  toggleInventory()
+})
+
+inventoryCloseButtonEl.addEventListener("click", () => {
+  closeInventory()
+})
+
+inventoryBodyEl.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-item-key]")
+  if (!button) {
+    return
+  }
+
+  const { itemKey } = button.dataset
+  if (itemKey) {
+    useInventoryItem(itemKey)
+  }
 })
 
 touchButtons.forEach((button) => {

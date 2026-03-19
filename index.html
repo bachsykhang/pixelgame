@@ -15,6 +15,7 @@
         Bản nâng cấp này có khu làng làm hub, sân tập quái để cày kỹ năng, NPC để nói chuyện và tuyến nhiệm vụ chính nối liền sang các khu chiến đấu kiểu Ninja School.
       </p>
       <div class="controls-card">
+        <p><span>B</span> Mở túi và dùng vật phẩm</p>
         <p><span>A / D</span> Di chuyển</p>
         <p><span>W / Space</span> Nhảy và nhảy đôi</p>
         <p><span>Shift</span> Lướt</p>
@@ -79,6 +80,10 @@
         </button>
         <div class="stage-chip" id="stageChip" style="display: none;">Màn 1 - Cổng Chìm</div>
         <button class="fullscreen-toggle" id="fullscreenButton" type="button">Toàn màn hình</button>
+        <button class="inventory-toggle" id="inventoryButton" type="button" aria-controls="inventoryPanel" aria-expanded="false" aria-label="Mở túi đồ">
+          <span class="inventory-toggle__icon" aria-hidden="true"></span>
+          <span class="inventory-toggle__count" id="inventoryCount">0</span>
+        </button>
         <div class="boss-bar hidden" id="bossBar" aria-live="polite">
           <div class="boss-bar__top">
             <span id="bossName">Lõi Hộ Vệ</span>
@@ -89,6 +94,17 @@
           </div>
         </div>
         <canvas id="gameCanvas" width="384" height="224" aria-label="Khung vẽ game đi cảnh pixel"></canvas>
+        <div class="inventory-panel hidden" id="inventoryPanel" aria-live="polite">
+          <div class="inventory-panel__header">
+            <div>
+              <p class="inventory-panel__kicker">Túi đồ</p>
+              <h3 id="inventoryTitle">Hành trang ninja</h3>
+            </div>
+            <button class="inventory-panel__close" id="inventoryCloseButton" type="button" aria-label="Đóng túi đồ">×</button>
+          </div>
+          <div class="inventory-panel__body" id="inventoryBody"></div>
+          <p class="inventory-panel__hint" id="inventoryHint">Nhấn B để mở hoặc đóng. Khi mở túi, bấm 1-4 để dùng nhanh.</p>
+        </div>
         <div class="overlay" id="overlay">
           <div class="overlay-card">
             <p class="overlay-kicker" id="overlayKicker">Làng ninja mới</p>

@@ -49,11 +49,20 @@ const BLAST_DAMAGE = 15
 const BLAST_COST = 20
 const GUARD_HEAL_RATE = 0.18
 const GUARD_SPIRIT_RATE = 0.45
+const AREA_TRANSITION_DURATION = 26
+const ENEMY_PATROL_SPEED = 0.52
+const ENEMY_CHASE_SPEED = 0.92
+const ENEMY_SIGHT_RANGE = 124
+const ENEMY_ATTACK_RANGE = 22
+const ENEMY_RANGED_RANGE = 136
+const ENEMY_ATTACK_COOLDOWN = 54
+const ENEMY_PROJECTILE_SPEED = 2.35
+const ENEMY_GRAVITY = 0.32
 
 const LEVELS = [
   {
     name: "Màn 1 - Cổng Chìm",
-    objective: "Thu thập tinh thể và chạy đến cổng sáng",
+    objective: "Băng qua khu cổng và chạm cổng sáng để sang bản đồ kế tiếp",
     palette: {
       skyTop: "#abdfff",
       skyBottom: "#ffe4a8",
@@ -67,7 +76,7 @@ const LEVELS = [
       "..............................................................",
       "..............................................................",
       "..............................................................",
-      ".............C..............E................................",
+      ".............C..............R................................",
       ".....###............###.............C........................",
       "..P........B..............................J..................",
       "######............S...........####....................###....",
@@ -76,14 +85,14 @@ const LEVELS = [
       "....................####.................####...............#",
       "..C........................................................#",
       "#########..............J.............B.....................#",
-      "...............E..................#####....................#",
+      "...............R..................#####....................#",
       "...........................................................#",
       "#########################....###############################"
     ]
   },
   {
     name: "Màn 2 - Vượt Ải Than Hồng",
-    objective: "Vượt qua đoạn lửa và mở cổng thứ hai",
+    objective: "Tiếp tục vượt ải và đi thẳng qua cổng sáng để tiến sâu hơn",
     palette: {
       skyTop: "#7d8fff",
       skyBottom: "#ffd6a1",
@@ -96,10 +105,10 @@ const LEVELS = [
       "..............................................................",
       "..............................................................",
       "...................................C.........................",
-      "...............###............................E..............",
+      "...............###............................R..............",
       "...P.....C...................J.....................####......",
       "#####...............S..............####......................",
-      "..........B...............E....................C............",
+      "..........B...............R....................C............",
       "................####.................S...............J.......",
       "....####....................###................#####........",
       ".....................C..................E................X..",
@@ -113,7 +122,7 @@ const LEVELS = [
   },
   {
     name: "Màn 3 - Pháo Đài Lõi",
-    objective: "Đánh bại Lõi Hộ Vệ",
+    objective: "Đánh bại Lõi Hộ Vệ ở khu cuối cùng",
     palette: {
       skyTop: "#4b5683",
       skyBottom: "#d47964",
@@ -167,6 +176,12 @@ const state = {
   status: {
     text: "Sẵn sàng vào tàn tích",
     hold: 0
+  },
+  transition: {
+    active: false,
+    timer: 0,
+    targetLevelIndex: null,
+    loaded: false
   }
 }
 
@@ -309,8 +324,9 @@ function buildLevel(config) {
         spikes.push({ x, y: y + 8, width: TILE, height: 8 })
       }
 
-      if (cell === "E") {
+      if (cell === "E" || cell === "R") {
         const initialVelocityX = columnIndex % 2 === 0 ? 0.65 : -0.65
+        const variant = cell === "R" ? "ranged" : "melee"
         enemies.push({
           id: makeId(),
           x: x + 1,
@@ -321,9 +337,21 @@ function buildLevel(config) {
           maxHealth: 32,
           velocityX: initialVelocityX,
           velocityY: 0,
+          grounded: false,
+          hitWall: false,
           initialVelocityX,
+          patrolDirection: initialVelocityX >= 0 ? 1 : -1,
+          facing: initialVelocityX >= 0 ? 1 : -1,
           leftBound: x - TILE * 3,
           rightBound: x + TILE * 4,
+          variant,
+          patrolSpeed: ENEMY_PATROL_SPEED + (columnIndex % 2) * 0.08,
+          chaseSpeed: ENEMY_CHASE_SPEED + (rowIndex % 2) * 0.06,
+          noticeRange: variant === "ranged" ? ENEMY_RANGED_RANGE : ENEMY_SIGHT_RANGE,
+          aggroTimer: 0,
+          attackCooldown: 18 + (columnIndex % 4) * 6,
+          attackWindup: 0,
+          attackMode: "idle",
           dead: false
         })
       }
@@ -406,9 +434,25 @@ function getCurrentPalette() {
   return state.currentLevel.config.palette
 }
 
-function loadLevel(index, resetRun) {
+function getLevelSpawn(parsed, options = {}) {
+  if (options.spawnOverride) {
+    return options.spawnOverride
+  }
+
+  return parsed.playerSpawn
+}
+
+function loadLevel(index, options = {}) {
+  if (typeof options === "boolean") {
+    options = { resetRun: options }
+  }
+
+  const { resetRun = false, preserveVitals = false, spawnOverride = null } = options
   const config = LEVELS[index]
   const parsed = buildLevel(config)
+  const spawnPoint = getLevelSpawn(parsed, { spawnOverride })
+  const preservedHealth = player.health
+  const preservedSpirit = player.spirit
 
   state.currentLevelIndex = index
   state.currentLevel = { ...parsed, config }
@@ -425,13 +469,13 @@ function loadLevel(index, resetRun) {
     player.finishedTime = 0
   }
 
-  player.health = player.maxHealth
-  player.spirit = 70
+  player.health = preserveVitals ? clamp(preservedHealth, 1, player.maxHealth) : player.maxHealth
+  player.spirit = preserveVitals ? clamp(preservedSpirit, 12, player.maxSpirit) : 70
   player.crystals = 0
-  player.x = parsed.playerSpawn.x
-  player.y = parsed.playerSpawn.y
-  player.spawnX = parsed.playerSpawn.x
-  player.spawnY = parsed.playerSpawn.y
+  player.x = spawnPoint.x
+  player.y = spawnPoint.y
+  player.spawnX = spawnPoint.x
+  player.spawnY = spawnPoint.y
   player.velocityX = 0
   player.velocityY = 0
   player.facing = 1
@@ -473,17 +517,69 @@ function setStatus(text, hold = 0) {
   state.status.hold = hold
 }
 
+function startAreaTransition(targetLevelIndex) {
+  if (
+    state.transition.active ||
+    targetLevelIndex == null ||
+    targetLevelIndex < 0 ||
+    targetLevelIndex >= LEVELS.length
+  ) {
+    return
+  }
+
+  state.transition.active = true
+  state.transition.timer = AREA_TRANSITION_DURATION
+  state.transition.targetLevelIndex = targetLevelIndex
+  state.transition.loaded = false
+  setStatus(`Đang sang ${LEVELS[targetLevelIndex].name}`, AREA_TRANSITION_DURATION + 18)
+}
+
+function updateAreaTransition(delta) {
+  if (!state.transition.active) {
+    return
+  }
+
+  state.transition.timer = Math.max(0, state.transition.timer - delta)
+
+  if (!state.transition.loaded && state.transition.timer <= AREA_TRANSITION_DURATION / 2) {
+    state.transition.loaded = true
+    loadLevel(state.transition.targetLevelIndex, { resetRun: false, preserveVitals: true })
+    setStatus(`Đã tới ${LEVELS[state.currentLevelIndex].name}`, 40)
+  }
+
+  if (state.transition.timer === 0) {
+    state.transition.active = false
+    state.transition.targetLevelIndex = null
+    state.transition.loaded = false
+  }
+}
+
+function getTransitionAlpha() {
+  if (!state.transition.active) {
+    return 0
+  }
+
+  const half = AREA_TRANSITION_DURATION / 2
+  const elapsed = AREA_TRANSITION_DURATION - state.transition.timer
+  const fade = elapsed < half ? elapsed / half : state.transition.timer / half
+  return clamp(fade, 0, 1) * 0.82
+}
+
 function getDefaultStatus() {
   if (state.boss && state.boss.health > 0) {
     return state.boss.phase === 2 ? "Trùm giai đoạn 2 - né đạn và phản đòn" : "Đánh bại Lõi Hộ Vệ"
   }
 
-  if (state.totalCrystals > 0 && player.crystals < state.totalCrystals) {
-    return `Tìm thêm ${state.totalCrystals - player.crystals} tinh thể`
+  if (state.currentLevel.exit) {
+    if (state.totalCrystals > 0 && player.crystals < state.totalCrystals) {
+      return `Đi tới cổng sáng để sang khu mới - còn ${state.totalCrystals - player.crystals} tinh thể phụ`
+    }
+
+    return "Cổng sáng phía trước - chạm vào để sang khu mới"
   }
 
-  if (state.currentLevel.exit) {
-    return "Cổng sáng đã mở - tiến về đích"
+  if (state.totalCrystals > 0 && player.crystals < state.totalCrystals) {
+    return `Còn ${state.totalCrystals - player.crystals} tinh thể trong khu vực`
   }
 
   return state.currentLevel.config.objective
@@ -723,6 +819,10 @@ async function toggleFullscreenMode() {
 
 function startCampaign() {
   const wasRunning = state.gameRunning
+  state.transition.active = false
+  state.transition.timer = 0
+  state.transition.targetLevelIndex = null
+  state.transition.loaded = false
   loadLevel(0, true)
   state.overlayMode = "playing"
   state.nextLevelIndex = null
@@ -751,6 +851,10 @@ function startNextLevel() {
 
 function finishRun(won) {
   state.gameRunning = false
+  state.transition.active = false
+  state.transition.timer = 0
+  state.transition.targetLevelIndex = null
+  state.transition.loaded = false
   player.finishedTime = player.runTime
   state.overlayMode = "restart"
 
@@ -779,16 +883,16 @@ function finishRun(won) {
 }
 
 function completeLevel() {
-  state.gameRunning = false
-  state.overlayMode = "next"
-  state.nextLevelIndex = state.currentLevelIndex + 1
+  travelToNextLevel()
+}
 
-  setOverlay(
-    `Hoàn thành ${LEVELS[state.currentLevelIndex].name}`,
-    `Nhấn để tiến vào ${LEVELS[state.nextLevelIndex].name}. Thời gian hiện tại là ${formatTime(player.runTime)}.`,
-    "Sang màn tiếp theo",
-    true
-  )
+function travelToNextLevel() {
+  if (state.currentLevelIndex >= LEVELS.length - 1) {
+    finishRun(true)
+    return
+  }
+
+  startAreaTransition(state.currentLevelIndex + 1)
 }
 
 function handleOverlayAction() {
@@ -822,6 +926,15 @@ function update(delta) {
   player.runTime += delta / 60
 
   updateTimers(delta)
+
+  if (state.transition.active) {
+    updateAreaTransition(delta)
+    updateParticles(delta)
+    tickStatus(delta)
+    refreshHud()
+    return
+  }
+
   updateGuarding(delta)
   handleMovement(delta)
   processJump()
@@ -1066,28 +1179,190 @@ function getSolidCollisions(rect) {
   return state.currentLevel.solids.filter((tile) => intersects(rect, tile))
 }
 
+function moveEnemyAxis(enemy, axis, amount) {
+  if (axis === "x") {
+    enemy.hitWall = false
+    enemy.x += amount
+    const collisions = getSolidCollisions(enemy)
+
+    collisions.forEach((tile) => {
+      if (amount > 0) {
+        enemy.x = tile.x - enemy.width
+      } else if (amount < 0) {
+        enemy.x = tile.x + tile.width
+      }
+
+      enemy.velocityX = 0
+      enemy.hitWall = true
+    })
+
+    return
+  }
+
+  enemy.y += amount
+  enemy.grounded = false
+  const collisions = getSolidCollisions(enemy)
+
+  collisions.forEach((tile) => {
+    if (amount > 0) {
+      enemy.y = tile.y - enemy.height
+      enemy.velocityY = 0
+      enemy.grounded = true
+    } else if (amount < 0) {
+      enemy.y = tile.y + tile.height
+      enemy.velocityY = 0
+    }
+  })
+}
+
+function beginEnemyAttack(enemy, attackMode) {
+  enemy.attackMode = attackMode
+  enemy.attackWindup = attackMode === "melee" ? 10 : 14
+  enemy.velocityX *= 0.35
+}
+
+function fireEnemyKunai(enemy) {
+  const startX = enemy.facing > 0 ? enemy.x + enemy.width : enemy.x - 7
+  const startY = enemy.y + 7
+  const targetX = player.x + player.width / 2
+  const targetY = player.y + player.height / 2
+  const angle = Math.atan2(targetY - startY, targetX - startX)
+
+  projectiles.push({
+    id: makeId(),
+    owner: "enemy",
+    kind: "kunai",
+    x: startX,
+    y: startY,
+    width: 7,
+    height: 3,
+    velocityX: Math.cos(angle) * ENEMY_PROJECTILE_SPEED,
+    velocityY: Math.sin(angle) * (ENEMY_PROJECTILE_SPEED * 0.75),
+    damage: 10,
+    life: 96
+  })
+}
+
+function performEnemyAttack(enemy) {
+  if (enemy.attackMode === "melee") {
+    meleeBursts.push({
+      id: makeId(),
+      owner: "enemy",
+      x: enemy.facing > 0 ? enemy.x + enemy.width - 2 : enemy.x - 18,
+      y: enemy.y + 1,
+      width: 20,
+      height: 12,
+      damage: 10,
+      direction: enemy.facing,
+      life: 8,
+      hitIds: new Set()
+    })
+    enemy.attackCooldown = ENEMY_ATTACK_COOLDOWN - 8
+    playSlashSound()
+  } else {
+    fireEnemyKunai(enemy)
+    enemy.attackCooldown = ENEMY_ATTACK_COOLDOWN + 12
+    playHitSound()
+  }
+
+  enemy.attackWindup = 0
+  enemy.attackMode = "idle"
+}
+
 function updateEnemies(delta) {
   state.currentLevel.enemies.forEach((enemy) => {
     if (enemy.dead) {
       return
     }
 
-    enemy.x += enemy.velocityX * delta
+    enemy.attackCooldown = Math.max(0, enemy.attackCooldown - delta)
+    enemy.aggroTimer = Math.max(0, enemy.aggroTimer - delta)
 
-    if (enemy.x <= enemy.leftBound || enemy.x >= enemy.rightBound) {
-      enemy.velocityX *= -1
+    const dx = player.x + player.width / 2 - (enemy.x + enemy.width / 2)
+    const dy = player.y + player.height / 2 - (enemy.y + enemy.height / 2)
+    const absDx = Math.abs(dx)
+    const absDy = Math.abs(dy)
+
+    if (absDx <= enemy.noticeRange && absDy < 30) {
+      enemy.aggroTimer = 84
     }
 
+    if (absDx > 4) {
+      enemy.facing = dx < 0 ? -1 : 1
+    }
+
+    let desiredDirection = enemy.patrolDirection
+    let desiredSpeed = enemy.patrolSpeed
+
+    if (enemy.attackWindup > 0) {
+      enemy.attackWindup = Math.max(0, enemy.attackWindup - delta)
+      enemy.velocityX *= Math.pow(0.45, delta)
+
+      if (enemy.attackWindup === 0) {
+        performEnemyAttack(enemy)
+      }
+    } else if (enemy.aggroTimer > 0) {
+      desiredDirection = enemy.facing
+
+      const wantsMelee = absDx <= ENEMY_ATTACK_RANGE && absDy < 18
+      const wantsRanged =
+        enemy.variant === "ranged" &&
+        absDx > ENEMY_ATTACK_RANGE + 8 &&
+        absDx < ENEMY_RANGED_RANGE &&
+        absDy < 24
+
+      if (enemy.attackCooldown === 0 && (wantsMelee || wantsRanged)) {
+        beginEnemyAttack(enemy, wantsMelee ? "melee" : "ranged")
+        desiredSpeed = 0
+      } else {
+        desiredSpeed = wantsMelee || wantsRanged ? 0 : enemy.chaseSpeed
+      }
+    } else {
+      if (enemy.x <= enemy.leftBound + 1) {
+        enemy.patrolDirection = 1
+      } else if (enemy.x >= enemy.rightBound - 1) {
+        enemy.patrolDirection = -1
+      }
+
+      desiredDirection = enemy.patrolDirection
+    }
+
+    if (enemy.attackWindup === 0) {
+      const desiredVelocityX = desiredDirection * desiredSpeed
+      enemy.velocityX += (desiredVelocityX - enemy.velocityX) * 0.26 * delta
+    }
+
+    enemy.velocityY = Math.min(enemy.velocityY + ENEMY_GRAVITY * delta, MAX_FALL_SPEED)
+    moveEnemyAxis(enemy, "x", enemy.velocityX * delta)
+
+    if (enemy.x <= enemy.leftBound) {
+      enemy.x = enemy.leftBound
+      enemy.velocityX = Math.max(0, enemy.velocityX)
+      enemy.patrolDirection = 1
+    } else if (enemy.x >= enemy.rightBound) {
+      enemy.x = enemy.rightBound
+      enemy.velocityX = Math.min(0, enemy.velocityX)
+      enemy.patrolDirection = -1
+    }
+
+    if (enemy.hitWall) {
+      enemy.patrolDirection *= -1
+    }
+
+    moveEnemyAxis(enemy, "y", enemy.velocityY * delta)
+
+    const probeDirection = enemy.aggroTimer > 0 ? enemy.facing : enemy.patrolDirection
     const ledgeProbe = {
-      x: enemy.velocityX > 0 ? enemy.x + enemy.width + 1 : enemy.x - 1,
+      x: probeDirection > 0 ? enemy.x + enemy.width + 1 : enemy.x - 1,
       y: enemy.y + enemy.height + 2,
       width: 1,
       height: 1
     }
 
     const hasGroundAhead = state.currentLevel.solids.some((tile) => intersects(ledgeProbe, tile))
-    if (!hasGroundAhead) {
-      enemy.velocityX *= -1
+    if (enemy.grounded && !hasGroundAhead) {
+      enemy.velocityX = 0
+      enemy.patrolDirection = probeDirection > 0 ? -1 : 1
     }
   })
 }
@@ -1329,6 +1604,14 @@ function updateMeleeBursts(delta) {
       height: burst.height
     }
 
+    if (burst.owner === "enemy") {
+      if (!burst.hitIds.has("player") && player.hurtTimer <= 0 && intersects(rect, player)) {
+        burst.hitIds.add("player")
+        damagePlayer(burst.damage, burst.direction, false)
+      }
+      continue
+    }
+
     state.currentLevel.enemies.forEach((enemy) => {
       if (enemy.dead || burst.hitIds.has(enemy.id)) {
         return
@@ -1347,7 +1630,11 @@ function updateMeleeBursts(delta) {
 
     for (let projectileIndex = projectiles.length - 1; projectileIndex >= 0; projectileIndex -= 1) {
       const projectile = projectiles[projectileIndex]
-      if (projectile.owner === "enemy" && projectile.kind === "orb" && intersects(rect, projectile)) {
+      if (
+        projectile.owner === "enemy" &&
+        projectile.kind !== "shockwave" &&
+        intersects(rect, projectile)
+      ) {
         projectiles.splice(projectileIndex, 1)
         gainSpirit(4)
         spawnParticles(projectile.x, projectile.y, 8, ["#ffffff", "#7af5ff"], 1.3, 0.01)
@@ -1506,9 +1793,9 @@ function collectCrystals() {
 
   if (collectedAny) {
     if (player.crystals === state.totalCrystals) {
-      setStatus("Đã đủ tinh thể - cổng sáng mở ra", 70)
+      setStatus("Đã gom sạch tinh thể - có thể sang khu mới bất cứ lúc nào", 70)
     } else {
-      setStatus("Tinh thể mới đã được thu thập", 36)
+      setStatus("Tinh thể đã được thu thập - nội lực tăng thêm", 36)
     }
   }
 }
@@ -1548,6 +1835,10 @@ function handleHazards() {
 }
 
 function checkObjective() {
+  if (state.transition.active) {
+    return
+  }
+
   if (state.boss) {
     return
   }
@@ -1557,14 +1848,10 @@ function checkObjective() {
   }
 
   if (intersects(player, state.currentLevel.exit)) {
-    if (player.crystals >= state.totalCrystals) {
-      if (state.currentLevelIndex === LEVELS.length - 1) {
-        finishRun(true)
-      } else {
-        completeLevel()
-      }
+    if (state.currentLevelIndex === LEVELS.length - 1) {
+      finishRun(true)
     } else {
-      setStatus("Cần thu thêm tinh thể trước khi qua cổng", 16)
+      travelToNextLevel()
     }
   }
 }
@@ -1636,7 +1923,14 @@ function damageEnemy(enemy, amount, direction) {
   }
 
   enemy.health -= amount
+  enemy.aggroTimer = Math.max(enemy.aggroTimer, 110)
+  enemy.facing = direction >= 0 ? 1 : -1
+  enemy.attackWindup = 0
+  enemy.attackMode = "idle"
+  enemy.attackCooldown = Math.max(enemy.attackCooldown, 14)
   enemy.velocityX = 1.1 * direction
+  enemy.velocityY = -1.8
+  enemy.grounded = false
   spawnParticles(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, 10, ["#ef9f8f", "#f8d26b", "#ffffff"], 1.6, 0.02)
   gainSpirit(8)
 
@@ -1716,6 +2010,7 @@ function performSlash() {
 
   meleeBursts.push({
     id: makeId(),
+    owner: "player",
     x,
     y: player.y + 1,
     width,
@@ -1837,6 +2132,12 @@ function render() {
   drawPlayer()
 
   ctx.restore()
+
+  const transitionAlpha = getTransitionAlpha()
+  if (transitionAlpha > 0) {
+    ctx.fillStyle = `rgba(6, 10, 18, ${transitionAlpha})`
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
+  }
 }
 
 function drawSky() {
@@ -1907,18 +2208,16 @@ function drawExit() {
     return
   }
 
-  const exitActive = state.totalCrystals === 0 || player.crystals >= state.totalCrystals
-  const auraWidth = 24 + Math.sin(state.currentLevel.exit.pulse) * 4
+  const allCrystalsCollected = state.totalCrystals > 0 && player.crystals >= state.totalCrystals
+  const auraWidth = (allCrystalsCollected ? 28 : 22) + Math.sin(state.currentLevel.exit.pulse) * 4
 
-  ctx.fillStyle = exitActive ? "#f7eb8a" : "#8b7052"
+  ctx.fillStyle = "#f7eb8a"
   ctx.fillRect(state.currentLevel.exit.x + 4, state.currentLevel.exit.y, 8, 32)
-  ctx.fillStyle = exitActive ? "#82f0ff" : "#473528"
+  ctx.fillStyle = allCrystalsCollected ? "#82f0ff" : "#4fd1ff"
   ctx.fillRect(state.currentLevel.exit.x, state.currentLevel.exit.y + 4, 16, 24)
 
-  if (exitActive) {
-    ctx.fillStyle = "rgba(130, 240, 255, 0.24)"
-    ctx.fillRect(state.currentLevel.exit.x - (auraWidth - 16) / 2, state.currentLevel.exit.y, auraWidth, 32)
-  }
+  ctx.fillStyle = allCrystalsCollected ? "rgba(130, 240, 255, 0.28)" : "rgba(79, 209, 255, 0.18)"
+  ctx.fillRect(state.currentLevel.exit.x - (auraWidth - 16) / 2, state.currentLevel.exit.y, auraWidth, 32)
 }
 
 function drawBeacons() {
@@ -1956,14 +2255,16 @@ function drawEnemies() {
       return
     }
 
-    ctx.fillStyle = "#6b2f50"
+    ctx.fillStyle = enemy.variant === "ranged" ? "#4d3d7f" : "#6b2f50"
     ctx.fillRect(enemy.x + 2, enemy.y + 2, 10, 10)
     ctx.fillStyle = "#ef9f8f"
     ctx.fillRect(enemy.x + 4, enemy.y + 4, 6, 4)
+    ctx.fillStyle = enemy.attackWindup > 0 ? "#ffe59a" : enemy.variant === "ranged" ? "#8ce6ff" : "#f2779d"
+    ctx.fillRect(enemy.x + (enemy.facing > 0 ? 9 : 3), enemy.y + 6, 2, 2)
     ctx.fillStyle = "#181818"
     ctx.fillRect(enemy.x + 4, enemy.y + 10, 2, 2)
     ctx.fillRect(enemy.x + 8, enemy.y + 10, 2, 2)
-    ctx.fillRect(enemy.x + (enemy.velocityX > 0 ? 10 : 2), enemy.y + 6, 2, 2)
+    ctx.fillRect(enemy.x + (enemy.facing > 0 ? 10 : 2), enemy.y + 6, 2, 2)
   })
 }
 
@@ -2007,6 +2308,14 @@ function drawProjectiles() {
       return
     }
 
+    if (projectile.kind === "kunai") {
+      ctx.fillStyle = "#9cc8ff"
+      ctx.fillRect(projectile.x, projectile.y, projectile.width, projectile.height)
+      ctx.fillStyle = "#ffffff"
+      ctx.fillRect(projectile.x + 1, projectile.y + 1, projectile.width - 2, 1)
+      return
+    }
+
     ctx.fillStyle = "#f8d26b"
     ctx.fillRect(projectile.x, projectile.y, projectile.width, projectile.height)
     ctx.fillStyle = "#ffffff"
@@ -2017,9 +2326,9 @@ function drawProjectiles() {
 function drawMeleeBursts() {
   meleeBursts.forEach((burst) => {
     ctx.globalAlpha = Math.min(1, burst.life / 7) * 0.65
-    ctx.fillStyle = "#ffe59a"
+    ctx.fillStyle = burst.owner === "enemy" ? "#f2779d" : "#ffe59a"
     ctx.fillRect(burst.x, burst.y + 4, burst.width, 4)
-    ctx.fillStyle = "#ffffff"
+    ctx.fillStyle = burst.owner === "enemy" ? "#fff2f6" : "#ffffff"
     if (burst.direction > 0) {
       ctx.fillRect(burst.x + burst.width - 5, burst.y + 2, 4, burst.height - 4)
     } else {
@@ -2270,8 +2579,8 @@ loadLevel(0, true)
 state.overlayMode = "start"
 applyBottomHudState(readStoredHudCollapsed())
 setOverlay(
-  "Vượt qua ba màn và đánh bại trùm cuối",
-  "Bạn có thể chém, bắn cầu năng lượng, lướt trên không và giữ thế gồng để đổi nội lực lấy máu trước trận trùm.",
+  "Chạy liền mạch qua ba khu và đánh bại trùm cuối",
+  "Chạm cổng sáng để sang khu mới ngay, chém hoặc bắn hạ quái đang tự tuần tra, rồi dùng gồng để đổi nội lực lấy máu trước trận trùm.",
   "Bắt đầu hành trình",
   true
 )

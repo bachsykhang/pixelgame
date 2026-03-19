@@ -12,7 +12,7 @@
       <p class="eyebrow">HTML &bull; CSS &bull; JavaScript &bull; Game hành động đi cảnh</p>
       <h1>Hành Trình Di Tích Pixel</h1>
       <p class="subtitle">
-        Bản nâng cấp này cho bạn chạy liền mạch qua nhiều khu như Ninja School, gặp quái tự tuần tra và tấn công, dùng chém, cầu năng lượng, lướt và gồng để sinh tồn tới trận trùm cuối.
+        Bản nâng cấp này có khu làng làm hub, sân tập quái để cày kỹ năng, NPC để nói chuyện và tuyến nhiệm vụ chính nối liền sang các khu chiến đấu kiểu Ninja School.
       </p>
       <div class="controls-card">
         <p><span>A / D</span> Di chuyển</p>
@@ -20,6 +20,7 @@
         <p><span>Shift</span> Lướt</p>
         <p><span>J</span> Chém gần</p>
         <p><span>L</span> Bắn cầu năng lượng</p>
+        <p><span>E</span> Nói chuyện với NPC</p>
         <p><span>Giữ F</span> Gồng để hồi máu</p>
         <p><span>Chạm cổng sáng</span> Sang khu mới ngay</p>
         <p><span>R</span> Chơi lại từ đầu</p>
@@ -90,10 +91,10 @@
         <canvas id="gameCanvas" width="384" height="224" aria-label="Khung vẽ game đi cảnh pixel"></canvas>
         <div class="overlay" id="overlay">
           <div class="overlay-card">
-            <p class="overlay-kicker">Cập nhật trùm</p>
-            <h2 id="overlayTitle">Chạy liền mạch qua ba khu và đánh bại trùm cuối</h2>
+            <p class="overlay-kicker" id="overlayKicker">Làng ninja mới</p>
+            <h2 id="overlayTitle">Đi qua làng, sân tập và tuyến nhiệm vụ chính</h2>
             <p id="overlayText">
-              Chạm cổng sáng để sang khu mới ngay, dọn quái đang tự tuần tra và đánh trả, rồi dùng gồng để đổi nội lực lấy máu trước trận trùm.
+              Nói chuyện với NPC để nhận hướng dẫn, ghé khu train quái để làm nóng tay rồi tiến ra chiến tuyến chính.
             </p>
             <button id="overlayButton" type="button">Bắt đầu hành trình</button>
           </div>
@@ -119,6 +120,7 @@
         <button class="touch-btn touch-btn--dash" data-action="dash" type="button">LƯỚT</button>
         <button class="touch-btn" data-action="slash" type="button">CHÉM</button>
         <button class="touch-btn" data-action="blast" type="button">BẮN</button>
+        <button class="touch-btn touch-btn--interact" data-action="interact" type="button">NÓI</button>
         <button class="touch-btn touch-btn--wide" data-action="guard" type="button">GỒNG</button>
       </div>
     </section>

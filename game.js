@@ -19,6 +19,7 @@ const bossNameEl = document.getElementById("bossName")
 const bossTextEl = document.getElementById("bossText")
 const bossFillEl = document.getElementById("bossFill")
 const overlayEl = document.getElementById("overlay")
+const overlayKickerEl = document.getElementById("overlayKicker")
 const overlayTitleEl = document.getElementById("overlayTitle")
 const overlayTextEl = document.getElementById("overlayText")
 const overlayButtonEl = document.getElementById("overlayButton")
@@ -61,8 +62,97 @@ const ENEMY_GRAVITY = 0.32
 
 const LEVELS = [
   {
-    name: "Màn 1 - Cổng Chìm",
-    objective: "Băng qua khu cổng và chạm cổng sáng để sang bản đồ kế tiếp",
+    name: "Màn 1 - Làng Tre",
+    objective: "Nói chuyện với dân làng rồi chọn cổng lam để tập luyện hoặc cổng vàng để nhận nhiệm vụ",
+    palette: {
+      skyTop: "#99d8ff",
+      skyBottom: "#ffe0a6",
+      hillBack: "#81b18f",
+      hillFront: "#426451",
+      tileTop: "#b18a63",
+      tileSide: "#6c4b33"
+    },
+    exits: {
+      X: 1,
+      Y: 2
+    },
+    npcTypes: {
+      N: {
+        name: "Trưởng làng Hạc",
+        dialogue:
+          "Làng Tre là nơi nghỉ chân của ninja trẻ. Cổng lam dẫn tới sân tập quái, còn cổng vàng đưa con vào tuyến nhiệm vụ chính."
+      },
+      M: {
+        name: "Cô bán đồ Mộc",
+        dialogue:
+          "Ta chưa mở cửa hàng thật đâu, nhưng tinh thể trên đường đi sẽ giúp con hồi nội lực. Nhặt chúng khi tiện, đừng vì chúng mà bỏ lỡ nhịp chiến đấu."
+      },
+      H: {
+        name: "Sư phụ Aoi",
+        dialogue:
+          "Nếu muốn vào form chiến đấu nhanh hơn, hãy rẽ qua sân tập trước. Quái ở đó đủ hung để con tập chém, lướt và gồng hồi máu."
+      }
+    },
+    map: [
+      "..............................................................",
+      "..............................................................",
+      ".............####......................####...................",
+      "..............................................................",
+      "....####..................####....................####........",
+      "..............................................................",
+      ".........................####.................................",
+      "..............................................................",
+      "..............................................................",
+      "..............................................................",
+      "..P....N........M.................H..................Y....X...",
+      "##############################################################",
+      "..............................................................",
+      ".............................................................."
+    ]
+  },
+  {
+    name: "Màn 2 - Sân Tập Bóng Ảnh",
+    objective: "Quét quái trong sân tập rồi đi qua cổng vàng để vào nhiệm vụ, hoặc cổng lam để quay về làng",
+    palette: {
+      skyTop: "#86c7ff",
+      skyBottom: "#ffd996",
+      hillBack: "#6f9187",
+      hillFront: "#324d48",
+      tileTop: "#a98562",
+      tileSide: "#654835"
+    },
+    exits: {
+      X: 0,
+      Y: 2
+    },
+    npcTypes: {
+      H: {
+        name: "Huấn luyện viên Ren",
+        dialogue:
+          "Đây là nơi farm kỹ năng. Cứ dọn quái cho quen tay, khi ổn rồi đi qua cổng vàng để vào tuyến nhiệm vụ thật."
+      }
+    },
+    map: [
+      "..............................................................",
+      "..............................................................",
+      "......................C.......................................",
+      ".............###....................R...............####......",
+      "..............................................................",
+      ".....C.........................####................C..........",
+      "..............J...............................................",
+      "............................................R.................",
+      ".........####.............E...........####....................",
+      "..............................................................",
+      "..X..P........E..........H.............E..............Y.......",
+      "##############################################################",
+      "..............................................................",
+      ".............B.................####...........................",
+      ".............................................................."
+    ]
+  },
+  {
+    name: "Màn 3 - Cổng Chìm",
+    objective: "Băng qua khu cổng và đi qua cổng sáng để áp sát chiến tuyến",
     palette: {
       skyTop: "#abdfff",
       skyBottom: "#ffe4a8",
@@ -70,6 +160,9 @@ const LEVELS = [
       hillFront: "#375b49",
       tileTop: "#a98761",
       tileSide: "#654833"
+    },
+    exits: {
+      X: 3
     },
     map: [
       "..............................................................",
@@ -91,7 +184,7 @@ const LEVELS = [
     ]
   },
   {
-    name: "Màn 2 - Vượt Ải Than Hồng",
+    name: "Màn 4 - Ải Than Hồng",
     objective: "Tiếp tục vượt ải và đi thẳng qua cổng sáng để tiến sâu hơn",
     palette: {
       skyTop: "#7d8fff",
@@ -100,6 +193,9 @@ const LEVELS = [
       hillFront: "#334268",
       tileTop: "#a98460",
       tileSide: "#624430"
+    },
+    exits: {
+      X: 4
     },
     map: [
       "..............................................................",
@@ -121,7 +217,7 @@ const LEVELS = [
     ]
   },
   {
-    name: "Màn 3 - Pháo Đài Lõi",
+    name: "Màn 5 - Pháo Đài Lõi",
     objective: "Đánh bại Lõi Hộ Vệ ở khu cuối cùng",
     palette: {
       skyTop: "#4b5683",
@@ -169,6 +265,7 @@ const state = {
   boss: null,
   nextEntityId: 1,
   overlayMode: "start",
+  dialogueNpcId: null,
   nextLevelIndex: null,
   gameRunning: false,
   lastTime: 0,
@@ -296,7 +393,8 @@ function buildLevel(config) {
   const enemies = []
   const beacons = []
   const jumpPads = []
-  let exit = null
+  const exits = []
+  const npcs = []
   let playerSpawn = { x: TILE * 2, y: TILE * 2 }
 
   map.forEach((row, rowIndex) => {
@@ -379,8 +477,31 @@ function buildLevel(config) {
         })
       }
 
-      if (cell === "X") {
-        exit = { x, y: y - TILE, width: TILE, height: TILE * 2, pulse: 0 }
+      if (config.exits && config.exits[cell] != null) {
+        exits.push({
+          id: makeId(),
+          key: cell,
+          x,
+          y: y - TILE,
+          width: TILE,
+          height: TILE * 2,
+          pulse: Math.random() * Math.PI * 2,
+          targetLevelIndex: config.exits[cell]
+        })
+      }
+
+      if (config.npcTypes && config.npcTypes[cell]) {
+        const npcConfig = config.npcTypes[cell]
+        npcs.push({
+          id: makeId(),
+          key: cell,
+          x: x + 1,
+          y,
+          width: 14,
+          height: 16,
+          name: npcConfig.name,
+          dialogue: npcConfig.dialogue
+        })
       }
 
       if (cell === "P") {
@@ -398,7 +519,8 @@ function buildLevel(config) {
     enemies,
     beacons,
     jumpPads,
-    exit,
+    exits,
+    npcs,
     playerSpawn
   }
 }
@@ -505,7 +627,9 @@ function loadLevel(index, options = {}) {
   render()
 }
 
-function setOverlay(title, text, buttonText, visible) {
+function setOverlay(kicker, title, text, buttonText, visible) {
+  overlayKickerEl.textContent = kicker
+  overlayKickerEl.style.display = kicker ? "" : "none"
   overlayTitleEl.textContent = title
   overlayTextEl.textContent = text
   overlayButtonEl.textContent = buttonText
@@ -515,6 +639,28 @@ function setOverlay(title, text, buttonText, visible) {
 function setStatus(text, hold = 0) {
   state.status.text = text
   state.status.hold = hold
+}
+
+function getNearbyNpc() {
+  if (!state.currentLevel || !state.currentLevel.npcs) {
+    return null
+  }
+
+  let nearestNpc = null
+  let nearestDistance = Number.POSITIVE_INFINITY
+
+  state.currentLevel.npcs.forEach((npc) => {
+    const dx = player.x + player.width / 2 - (npc.x + npc.width / 2)
+    const dy = player.y + player.height / 2 - (npc.y + npc.height / 2)
+    const distance = Math.abs(dx) + Math.abs(dy)
+
+    if (Math.abs(dx) <= 28 && Math.abs(dy) <= 26 && distance < nearestDistance) {
+      nearestNpc = npc
+      nearestDistance = distance
+    }
+  })
+
+  return nearestNpc
 }
 
 function startAreaTransition(targetLevelIndex) {
@@ -570,15 +716,12 @@ function getDefaultStatus() {
     return state.boss.phase === 2 ? "Trùm giai đoạn 2 - né đạn và phản đòn" : "Đánh bại Lõi Hộ Vệ"
   }
 
-  if (state.currentLevel.exit) {
-    if (state.totalCrystals > 0 && player.crystals < state.totalCrystals) {
-      return `Đi tới cổng sáng để sang khu mới - còn ${state.totalCrystals - player.crystals} tinh thể phụ`
-    }
-
-    return "Cổng sáng phía trước - chạm vào để sang khu mới"
+  const nearbyNpc = getNearbyNpc()
+  if (nearbyNpc) {
+    return `Nhấn E để nói chuyện với ${nearbyNpc.name}`
   }
 
-  if (state.totalCrystals > 0 && player.crystals < state.totalCrystals) {
+  if (!state.currentLevel.exits.length && state.totalCrystals > 0 && player.crystals < state.totalCrystals) {
     return `Còn ${state.totalCrystals - player.crystals} tinh thể trong khu vực`
   }
 
@@ -597,7 +740,11 @@ function tickStatus(delta) {
 
 function refreshHud() {
   levelValueEl.textContent = `${state.currentLevelIndex + 1} / ${LEVELS.length}`
-  crystalCountEl.textContent = state.totalCrystals > 0 ? `${player.crystals} / ${state.totalCrystals}` : "Trùm"
+  crystalCountEl.textContent = state.boss
+    ? "Trùm"
+    : state.totalCrystals > 0
+      ? `${player.crystals} / ${state.totalCrystals}`
+      : "Không có"
 
   healthFillEl.style.width = `${(player.health / player.maxHealth) * 100}%`
   spiritFillEl.style.width = `${(player.spirit / player.maxSpirit) * 100}%`
@@ -823,10 +970,11 @@ function startCampaign() {
   state.transition.timer = 0
   state.transition.targetLevelIndex = null
   state.transition.loaded = false
+  state.dialogueNpcId = null
   loadLevel(0, true)
   state.overlayMode = "playing"
   state.nextLevelIndex = null
-  setOverlay("", "", "", false)
+  setOverlay("", "", "", "", false)
   setStatus("Bắt đầu hành trình", 55)
   state.gameRunning = true
   state.lastTime = performance.now()
@@ -840,7 +988,8 @@ function startNextLevel() {
   loadLevel(state.nextLevelIndex, false)
   state.overlayMode = "playing"
   state.nextLevelIndex = null
-  setOverlay("", "", "", false)
+  state.dialogueNpcId = null
+  setOverlay("", "", "", "", false)
   setStatus("Tiến vào màn mới", 55)
   state.gameRunning = true
   state.lastTime = performance.now()
@@ -855,6 +1004,7 @@ function finishRun(won) {
   state.transition.timer = 0
   state.transition.targetLevelIndex = null
   state.transition.loaded = false
+  state.dialogueNpcId = null
   player.finishedTime = player.runTime
   state.overlayMode = "restart"
 
@@ -862,8 +1012,9 @@ function finishRun(won) {
     playWinSound()
     setStatus("Lõi Hộ Vệ đã sụp đổ")
     setOverlay(
+      "Hoàn thành",
       "Bạn đã hoàn thành Hành Trình Di Tích Pixel",
-      `Ba màn đã được vượt qua trong ${formatTime(player.finishedTime)}. Nhấn để bắt đầu một chuyến đi mới.`,
+      `Năm khu đã được vượt qua trong ${formatTime(player.finishedTime)}. Nhấn để bắt đầu một chuyến đi mới.`,
       "Chơi lại từ đầu",
       true
     )
@@ -871,6 +1022,7 @@ function finishRun(won) {
     playLoseSound()
     setStatus("Nội lực đã cạn")
     setOverlay(
+      "Thất bại",
       "Bạn đã thất bại",
       `Bạn dừng lại ở ${LEVELS[state.currentLevelIndex].name} sau ${formatTime(player.finishedTime)}. Nhấn để thử lại.`,
       "Thử lại",
@@ -883,6 +1035,12 @@ function finishRun(won) {
 }
 
 function completeLevel() {
+  const nextExit = state.currentLevel.exits[0]
+  if (nextExit) {
+    startAreaTransition(nextExit.targetLevelIndex)
+    return
+  }
+
   travelToNextLevel()
 }
 
@@ -895,10 +1053,51 @@ function travelToNextLevel() {
   startAreaTransition(state.currentLevelIndex + 1)
 }
 
+function resumeFromDialogue() {
+  const wasRunning = state.gameRunning
+  state.overlayMode = "playing"
+  state.dialogueNpcId = null
+  setOverlay("", "", "", "", false)
+  state.gameRunning = true
+  state.lastTime = performance.now()
+
+  if (!wasRunning) {
+    requestAnimationFrame(loop)
+  }
+}
+
+function openNpcDialogue(npc) {
+  input.left = false
+  input.right = false
+  input.guard = false
+  player.isGuarding = false
+  state.gameRunning = false
+  state.overlayMode = "dialogue"
+  state.dialogueNpcId = npc.id
+  setOverlay("Hội thoại", npc.name, npc.dialogue, "Tiếp tục", true)
+  render()
+}
+
+function tryInteract() {
+  if (!state.gameRunning || state.transition.active) {
+    return
+  }
+
+  const nearbyNpc = getNearbyNpc()
+  if (!nearbyNpc) {
+    setStatus("Không có ai ở gần để trò chuyện", 24)
+    return
+  }
+
+  openNpcDialogue(nearbyNpc)
+}
+
 function handleOverlayAction() {
   ensureAudio()
 
-  if (state.overlayMode === "next") {
+  if (state.overlayMode === "dialogue") {
+    resumeFromDialogue()
+  } else if (state.overlayMode === "next") {
     startNextLevel()
   } else {
     startCampaign()
@@ -1029,9 +1228,9 @@ function updateTimers(delta) {
   player.spirit = clamp(player.spirit + 0.025 * delta, 0, player.maxSpirit)
   state.screenShake = Math.max(0, state.screenShake - 0.3 * delta)
 
-  if (state.currentLevel.exit) {
-    state.currentLevel.exit.pulse += 0.08 * delta
-  }
+  state.currentLevel.exits.forEach((exit) => {
+    exit.pulse += 0.08 * delta
+  })
 
   if (state.boss) {
     state.boss.flashTimer = Math.max(0, state.boss.flashTimer - delta)
@@ -1843,16 +2042,13 @@ function checkObjective() {
     return
   }
 
-  if (!state.currentLevel.exit) {
+  if (!state.currentLevel.exits.length) {
     return
   }
 
-  if (intersects(player, state.currentLevel.exit)) {
-    if (state.currentLevelIndex === LEVELS.length - 1) {
-      finishRun(true)
-    } else {
-      travelToNextLevel()
-    }
+  const touchedExit = state.currentLevel.exits.find((exit) => intersects(player, exit))
+  if (touchedExit) {
+    startAreaTransition(touchedExit.targetLevelIndex)
   }
 }
 
@@ -2121,8 +2317,9 @@ function render() {
   drawParallax()
   drawTiles()
   drawJumpPads()
-  drawExit()
+  drawExits()
   drawBeacons()
+  drawNpcs()
   drawCrystals()
   drawEnemies()
   drawBoss()
@@ -2203,21 +2400,67 @@ function drawJumpPads() {
   })
 }
 
-function drawExit() {
-  if (!state.currentLevel.exit) {
+function drawExits() {
+  if (!state.currentLevel.exits.length) {
     return
   }
 
   const allCrystalsCollected = state.totalCrystals > 0 && player.crystals >= state.totalCrystals
-  const auraWidth = (allCrystalsCollected ? 28 : 22) + Math.sin(state.currentLevel.exit.pulse) * 4
 
-  ctx.fillStyle = "#f7eb8a"
-  ctx.fillRect(state.currentLevel.exit.x + 4, state.currentLevel.exit.y, 8, 32)
-  ctx.fillStyle = allCrystalsCollected ? "#82f0ff" : "#4fd1ff"
-  ctx.fillRect(state.currentLevel.exit.x, state.currentLevel.exit.y + 4, 16, 24)
+  state.currentLevel.exits.forEach((exit) => {
+    const isMissionGate = exit.key === "Y"
+    const pillarColor = isMissionGate ? "#f7eb8a" : "#c7f6ff"
+    const coreColor = isMissionGate
+      ? allCrystalsCollected
+        ? "#ffe59a"
+        : "#f0b454"
+      : allCrystalsCollected
+        ? "#82f0ff"
+        : "#4fd1ff"
+    const auraColor = isMissionGate ? "rgba(248, 210, 107, 0.22)" : "rgba(79, 209, 255, 0.18)"
+    const auraWidth = (allCrystalsCollected ? 28 : 22) + Math.sin(exit.pulse) * 4
 
-  ctx.fillStyle = allCrystalsCollected ? "rgba(130, 240, 255, 0.28)" : "rgba(79, 209, 255, 0.18)"
-  ctx.fillRect(state.currentLevel.exit.x - (auraWidth - 16) / 2, state.currentLevel.exit.y, auraWidth, 32)
+    ctx.fillStyle = pillarColor
+    ctx.fillRect(exit.x + 4, exit.y, 8, 32)
+    ctx.fillStyle = coreColor
+    ctx.fillRect(exit.x, exit.y + 4, 16, 24)
+
+    ctx.fillStyle = auraColor
+    ctx.fillRect(exit.x - (auraWidth - 16) / 2, exit.y, auraWidth, 32)
+
+    ctx.fillStyle = "rgba(255,255,255,0.8)"
+    ctx.fillRect(exit.x + 6, exit.y + 8, 4, 2)
+  })
+}
+
+function drawNpcs() {
+  const nearbyNpc = getNearbyNpc()
+
+  state.currentLevel.npcs.forEach((npc) => {
+    const palette =
+      npc.key === "N"
+        ? { outfit: "#476b56", accent: "#ffe59a" }
+        : npc.key === "M"
+          ? { outfit: "#91583f", accent: "#85f7ff" }
+          : { outfit: "#355e88", accent: "#f8d26b" }
+
+    ctx.fillStyle = palette.outfit
+    ctx.fillRect(npc.x + 2, npc.y + 5, 10, 9)
+    ctx.fillStyle = "#ffcf99"
+    ctx.fillRect(npc.x + 4, npc.y + 2, 6, 5)
+    ctx.fillStyle = "#1a1a1a"
+    ctx.fillRect(npc.x + 5, npc.y + 4, 1, 1)
+    ctx.fillRect(npc.x + 8, npc.y + 4, 1, 1)
+    ctx.fillStyle = palette.accent
+    ctx.fillRect(npc.x + 3, npc.y + 14, 8, 2)
+
+    if (nearbyNpc && nearbyNpc.id === npc.id) {
+      ctx.fillStyle = "rgba(255, 255, 255, 0.92)"
+      ctx.fillRect(npc.x + 5, npc.y - 8, 4, 4)
+      ctx.fillStyle = "#1b1b1b"
+      ctx.fillRect(npc.x + 6, npc.y - 7, 2, 1)
+    }
+  })
 }
 
 function drawBeacons() {
@@ -2457,6 +2700,10 @@ function setKeyState(event, pressed) {
     castBlast()
   }
 
+  if (code === "KeyE" && pressed) {
+    tryInteract()
+  }
+
   if (code === "KeyR" && pressed) {
     handleOverlayAction()
   }
@@ -2471,7 +2718,8 @@ window.addEventListener("keydown", (event) => {
       "Space",
       "ShiftLeft",
       "ShiftRight",
-      "KeyF"
+      "KeyF",
+      "KeyE"
     ].includes(event.code)
   ) {
     event.preventDefault()
@@ -2551,6 +2799,8 @@ touchButtons.forEach((button) => {
       performSlash()
     } else if (action === "blast") {
       castBlast()
+    } else if (action === "interact") {
+      tryInteract()
     } else if (action === "guard") {
       input.guard = true
     }
@@ -2579,8 +2829,9 @@ loadLevel(0, true)
 state.overlayMode = "start"
 applyBottomHudState(readStoredHudCollapsed())
 setOverlay(
-  "Chạy liền mạch qua ba khu và đánh bại trùm cuối",
-  "Chạm cổng sáng để sang khu mới ngay, chém hoặc bắn hạ quái đang tự tuần tra, rồi dùng gồng để đổi nội lực lấy máu trước trận trùm.",
+  "Làng ninja mới",
+  "Đi qua làng, sân tập và tuyến nhiệm vụ chính",
+  "Đi qua làng, ghé sân tập quái, nói chuyện với NPC rồi bắt đầu tuyến nhiệm vụ chính.",
   "Bắt đầu hành trình",
   true
 )

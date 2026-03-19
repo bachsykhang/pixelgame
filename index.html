@@ -27,11 +27,27 @@
 
     <section class="game-panel">
       <div class="canvas-wrap">
-        <div class="hud">
-          <div class="hud-item">
+        <div class="hud hud--top" style="opacity: 0.4;">
+          <div class="hud-item hud-item--level">
             <span class="label">Man</span>
             <strong id="levelValue">1</strong>
           </div>
+          <div class="hud-item hud-item--meter">
+            <span class="label">Mau</span>
+            <div class="meter">
+              <div class="meter-fill meter-fill--health" id="healthFill"></div>
+            </div>
+            <strong id="healthText">100 / 100</strong>
+          </div>
+          <div class="hud-item hud-item--meter">
+            <span class="label">Noi luc</span>
+            <div class="meter">
+              <div class="meter-fill meter-fill--spirit" id="spiritFill"></div>
+            </div>
+            <strong id="spiritText">50 / 100</strong>
+          </div>
+        </div>
+        <div class="hud hud--bottom" id="bottomHud">
           <div class="hud-item">
             <span class="label">Tinh the</span>
             <strong id="crystalCount">0 / 0</strong>
@@ -44,26 +60,22 @@
             <span class="label">Thoi gian</span>
             <strong id="timeValue">00:00.0</strong>
           </div>
-          <div class="hud-item hud-item--wide">
-            <span class="label">Mau</span>
-            <div class="meter">
-              <div class="meter-fill meter-fill--health" id="healthFill"></div>
-            </div>
-            <strong id="healthText">100 / 100</strong>
-          </div>
-          <div class="hud-item hud-item--wide">
-            <span class="label">Noi luc</span>
-            <div class="meter">
-              <div class="meter-fill meter-fill--spirit" id="spiritFill"></div>
-            </div>
-            <strong id="spiritText">50 / 100</strong>
-          </div>
-          <div class="hud-item hud-item--full">
+          <div class="hud-item hud-item--full hud-item--status">
             <span class="label">Trang thai</span>
             <strong id="statusText">San sang vao tan tich</strong>
           </div>
         </div>
-        <div class="stage-chip" id="stageChip">Man 1 - Sunken Gate</div>
+        <button
+          class="hud-toggle"
+          id="hudToggleButton"
+          type="button"
+          aria-controls="bottomHud"
+          aria-expanded="true"
+          aria-label="Thu gon thong tin tran dau"
+        >
+          <span class="hud-toggle__icon" aria-hidden="true"></span>
+        </button>
+        <div class="stage-chip" id="stageChip" style="display: none;">Man 1 - Sunken Gate</div>
         <button class="fullscreen-toggle" id="fullscreenButton" type="button">Toan man hinh</button>
         <div class="boss-bar hidden" id="bossBar" aria-live="polite">
           <div class="boss-bar__top">

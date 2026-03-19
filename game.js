@@ -11,6 +11,8 @@ const healthTextEl = document.getElementById("healthText")
 const spiritFillEl = document.getElementById("spiritFill")
 const spiritTextEl = document.getElementById("spiritText")
 const statusTextEl = document.getElementById("statusText")
+const bottomHudEl = document.getElementById("bottomHud")
+const hudToggleButtonEl = document.getElementById("hudToggleButton")
 const stageChipEl = document.getElementById("stageChip")
 const bossBarEl = document.getElementById("bossBar")
 const bossNameEl = document.getElementById("bossName")
@@ -25,6 +27,8 @@ const fullscreenButtonEl = document.getElementById("fullscreenButton")
 const rotateHintEl = document.getElementById("rotateHint")
 const rotateFullscreenButtonEl = document.getElementById("rotateFullscreenButton")
 const touchButtons = document.querySelectorAll(".touch-btn")
+
+const HUD_COLLAPSED_STORAGE_KEY = "pixel-relic-saga-bottom-hud-collapsed"
 
 const TILE = 16
 const GRAVITY = 0.42
@@ -51,12 +55,12 @@ const LEVELS = [
     name: "Man 1 - Sunken Gate",
     objective: "Gom tinh the va chay den cong sang",
     palette: {
-      skyTop: "#8ec9ff",
-      skyBottom: "#f3c97d",
-      hillBack: "#557a6c",
-      hillFront: "#355748",
-      tileTop: "#987654",
-      tileSide: "#6d4a32"
+      skyTop: "#abdfff",
+      skyBottom: "#ffe4a8",
+      hillBack: "#6f9a82",
+      hillFront: "#375b49",
+      tileTop: "#a98761",
+      tileSide: "#654833"
     },
     map: [
       "..............................................................",
@@ -81,12 +85,12 @@ const LEVELS = [
     name: "Man 2 - Ember Crossing",
     objective: "Vuot qua doan lua va mo cong thu hai",
     palette: {
-      skyTop: "#625cb8",
-      skyBottom: "#f49c7b",
-      hillBack: "#554a73",
-      hillFront: "#2b2f58",
-      tileTop: "#8e6b4c",
-      tileSide: "#5d3e2d"
+      skyTop: "#7d8fff",
+      skyBottom: "#ffd6a1",
+      hillBack: "#67739b",
+      hillFront: "#334268",
+      tileTop: "#a98460",
+      tileSide: "#624430"
     },
     map: [
       "..............................................................",
@@ -111,12 +115,12 @@ const LEVELS = [
     name: "Man 3 - Core Citadel",
     objective: "Danh bai Guardian Core",
     palette: {
-      skyTop: "#37253d",
-      skyBottom: "#7c3f4f",
-      hillBack: "#48314f",
-      hillFront: "#241929",
-      tileTop: "#75616a",
-      tileSide: "#3d3138"
+      skyTop: "#4b5683",
+      skyBottom: "#d47964",
+      hillBack: "#665d7c",
+      hillFront: "#2a2c42",
+      tileTop: "#8f7f86",
+      tileSide: "#4d424a"
     },
     boss: {
       name: "Guardian Core",
@@ -221,6 +225,38 @@ function makeId() {
 
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value))
+}
+
+function readStoredHudCollapsed() {
+  try {
+    return window.localStorage.getItem(HUD_COLLAPSED_STORAGE_KEY) === "true"
+  } catch (error) {
+    return false
+  }
+}
+
+function storeHudCollapsed(collapsed) {
+  try {
+    window.localStorage.setItem(HUD_COLLAPSED_STORAGE_KEY, String(collapsed))
+  } catch (error) {
+    // Ignore storage failures in private browsing or restricted environments.
+  }
+}
+
+function applyBottomHudState(collapsed) {
+  bottomHudEl.classList.toggle("is-collapsed", collapsed)
+  hudToggleButtonEl.classList.toggle("is-collapsed", collapsed)
+  hudToggleButtonEl.setAttribute("aria-expanded", String(!collapsed))
+  hudToggleButtonEl.setAttribute(
+    "aria-label",
+    collapsed ? "Mo thong tin tran dau" : "Thu gon thong tin tran dau"
+  )
+}
+
+function toggleBottomHud() {
+  const nextCollapsed = !bottomHudEl.classList.contains("is-collapsed")
+  applyBottomHudState(nextCollapsed)
+  storeHudCollapsed(nextCollapsed)
 }
 
 function normalizeMap(rows) {
@@ -2182,6 +2218,10 @@ rotateFullscreenButtonEl.addEventListener("click", () => {
   toggleFullscreenMode()
 })
 
+hudToggleButtonEl.addEventListener("click", () => {
+  toggleBottomHud()
+})
+
 touchButtons.forEach((button) => {
   const action = button.dataset.action
 
@@ -2228,6 +2268,7 @@ touchButtons.forEach((button) => {
 
 loadLevel(0, true)
 state.overlayMode = "start"
+applyBottomHudState(readStoredHudCollapsed())
 setOverlay(
   "Vuot qua ba man va danh bai boss cuoi",
   "Ban co the chem, ban cau nang luong, dash tren khong va giu the gong de doi noi luc lay mau truoc tran boss.",

@@ -728,7 +728,6 @@ canvas {
     radial-gradient(circle at center, rgba(255, 226, 142, 0.08), transparent 30%),
     rgba(7, 14, 18, 0.62);
   transition: opacity 220ms ease, visibility 220ms ease;
-  z-index: 3;
   backdrop-filter: blur(4px);
 }
 
@@ -939,7 +938,7 @@ button {
   .hud--top {
     top: 46px;
     left: 10px;
-    width: calc(100% - 106px);
+    width: calc(100% - 188px);
     grid-template-columns: 72px minmax(0, 1fr) minmax(0, 1fr);
     gap: 8px;
   }
@@ -954,6 +953,19 @@ button {
   .hud-toggle {
     right: 10px;
     bottom: 10px;
+  }
+
+  .inventory-toggle {
+    top: 10px;
+    right: 116px;
+    width: 42px;
+    height: 42px;
+  }
+
+  .inventory-panel {
+    top: 58px;
+    right: 10px;
+    width: min(300px, calc(100% - 20px));
   }
 
   .hud-item {
@@ -1007,7 +1019,7 @@ button {
   .hud--top {
     top: 40px;
     left: 8px;
-    width: min(400px, calc(100% - 104px));
+    width: min(400px, calc(100% - 178px));
   }
 
   .hud--bottom {
@@ -1020,6 +1032,20 @@ button {
   .hud-toggle {
     right: 8px;
     bottom: 8px;
+  }
+
+  .inventory-toggle {
+    top: 8px;
+    right: 104px;
+    width: 40px;
+    height: 40px;
+  }
+
+  .inventory-panel {
+    top: 54px;
+    right: 8px;
+    width: calc(100% - 16px);
+    padding: 14px;
   }
 
   .hud-item {

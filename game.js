@@ -229,8 +229,86 @@ const LEVELS = [
     ]
   },
   {
-    name: "Màn 4 - Ải Than Hồng",
-    objective: "Tiếp tục vượt ải và đi thẳng qua cổng sáng để tiến sâu hơn",
+    name: "Màn 4 - Rừng Lá Xoáy",
+    objective: "Đi qua rừng gió, tận dụng vật phẩm để áp chế quái cơ động rồi sang khu miếu cổ.",
+    palette: {
+      skyTop: "#95d8b1",
+      skyBottom: "#ffe6b0",
+      hillBack: "#70936d",
+      hillFront: "#304f37",
+      tileTop: "#9b8458",
+      tileSide: "#5f472e"
+    },
+    exits: {
+      X: 4
+    },
+    npcTypes: {
+      G: {
+        name: "Người gác rừng Sora",
+        dialogue:
+          "Rừng này có gió đổi hướng liên tục. Nhặt Phong phù và Lôi phù đi, chúng cực hữu dụng khi quái ùa tới từ nhiều phía."
+      }
+    },
+    map: [
+      "..............................................................",
+      "..................................T...........................",
+      "............####..............................................",
+      "............................####..............U...............",
+      "....P..G........E........................####.................",
+      "########..............####...................................",
+      "...............C.............J...............R...............",
+      "....................####...........V.........................",
+      "..T.............E..............####...............####.......",
+      "..............................................C...........X..",
+      ".....####.................B..............####................",
+      ".................................R............................",
+      "..............####......................Z....................",
+      "##############################################################",
+      ".............................................................."
+    ]
+  },
+  {
+    name: "Màn 5 - Miếu Gió Cổ",
+    objective: "Khám phá khu miếu đổ nát, lấy vật phẩm trên đường và giữ nhịp chiến đấu trước khi tới ải lửa.",
+    palette: {
+      skyTop: "#b9d8ef",
+      skyBottom: "#ffd8a6",
+      hillBack: "#7f8f97",
+      hillFront: "#3d5057",
+      tileTop: "#a58b62",
+      tileSide: "#64503a"
+    },
+    exits: {
+      X: 5
+    },
+    npcTypes: {
+      K: {
+        name: "Người giữ miếu Kaede",
+        dialogue:
+          "Miếu cổ lưu nhiều linh dược hơn tinh thể. Đừng tiếc đồ, dùng đúng lúc sẽ giúp con giữ máu cho quãng đường cuối."
+      }
+    },
+    map: [
+      "..............................................................",
+      "......................T...............####....................",
+      "..............................................................",
+      "....####.................####.....................U..........",
+      "..............................................................",
+      "..P.....K.......B..................E.................####....",
+      "######..........####.........................................",
+      "...........V.................####...............R............",
+      ".....................S.................................T.....",
+      "........####......................####.......................",
+      "..............................C......................X.......",
+      "....J....................E...............####................",
+      "..............####..................Z.......................",
+      "##############################################################",
+      ".............................................................."
+    ]
+  },
+  {
+    name: "Màn 6 - Ải Than Hồng",
+    objective: "Vượt ải lửa khắc nghiệt, gom thêm vật phẩm tiếp viện rồi tiến thẳng tới pháo đài lõi.",
     palette: {
       skyTop: "#7d8fff",
       skyBottom: "#ffd6a1",
@@ -240,30 +318,30 @@ const LEVELS = [
       tileSide: "#624430"
     },
     exits: {
-      X: 4
+      X: 6
     },
     map: [
       "..............................................................",
-      "..............................................................",
       "...................................C.........................",
       "...............###............................R..............",
-      "...P.....C...................J.....................####......",
+      "...P.....C...................J...........T.........####......",
       "#####...............S..............####......................",
-      "..........B...............R....................C............",
+      "..........B...............R....................C.............",
       "................####.................S...............J.......",
       "....####....................###................#####........",
       ".....................C..................E................X..",
-      "..J...........#####..............C.................####.....",
+      "..J...........#####..............C...........U.....####.....",
       "......................S.....................B...............",
       "...C..........E...................####......................",
-      "########..............####.................................#",
+      "########..............####......................V..........#",
       ".................J.............C....................######.#",
+      "..............................Z............................#",
       "########################....###############################."
     ]
   },
   {
-    name: "Màn 5 - Pháo Đài Lõi",
-    objective: "Đánh bại Lõi Hộ Vệ ở khu cuối cùng",
+    name: "Màn 7 - Pháo Đài Lõi",
+    objective: "Đánh bại Lõi Hộ Vệ ở khu cuối cùng.",
     palette: {
       skyTop: "#4b5683",
       skyBottom: "#d47964",
@@ -280,15 +358,14 @@ const LEVELS = [
     },
     map: [
       "...............................................",
-      "...............................................",
-      "...............................................",
+      "..............T...............U................",
       "......####......................####...........",
       "...............................................",
-      "..P.....B......................................",
+      "..P.....B..............V.......................",
       "#####.................####.....................",
       "#.............................................#",
       "#..................#####......................#",
-      "#.............................................#",
+      "#..............Z..............................#",
       "#.......####......................####........#",
       "#.............................................#",
       "#.............................................#",
@@ -357,6 +434,46 @@ const SCENE_THEMES = [
     ambientType: "mote",
     ambientDensity: 24,
     ambientColors: ["#dfffff", "#9fd8cf", "#fff1ca"]
+  },
+  {
+    skyMid: "#88d0a2",
+    glowColor: "#ffe9af",
+    glowHalo: "rgba(201, 255, 188, 0.24)",
+    hazeTop: "rgba(240, 255, 224, 0.12)",
+    hazeBottom: "rgba(191, 236, 176, 0.18)",
+    cloudColor: "rgba(248, 255, 240, 0.72)",
+    cloudShade: "rgba(171, 221, 177, 0.18)",
+    sparkleColor: "rgba(225, 255, 216, 0.12)",
+    ridgeBack: "#5f8a5e",
+    ridgeFront: "#274634",
+    detailType: "forest",
+    detailMain: "#314e3a",
+    detailAccent: "#b4f4a8",
+    floraColor: "#24402f",
+    floraAccent: "#8dde9d",
+    ambientType: "leaf",
+    ambientDensity: 26,
+    ambientColors: ["#fbe9a9", "#8dde9d", "#d7ffcf"]
+  },
+  {
+    skyMid: "#a6cfe5",
+    glowColor: "#ffe0b2",
+    glowHalo: "rgba(255, 223, 169, 0.22)",
+    hazeTop: "rgba(245, 247, 255, 0.14)",
+    hazeBottom: "rgba(214, 234, 244, 0.18)",
+    cloudColor: "rgba(255, 251, 242, 0.72)",
+    cloudShade: "rgba(167, 198, 223, 0.18)",
+    sparkleColor: "rgba(255, 244, 216, 0.11)",
+    ridgeBack: "#738992",
+    ridgeFront: "#354d55",
+    detailType: "shrine",
+    detailMain: "#42545b",
+    detailAccent: "#ffe2a1",
+    floraColor: "#34444b",
+    floraAccent: "#c8e8ef",
+    ambientType: "mote",
+    ambientDensity: 24,
+    ambientColors: ["#fff2c8", "#d9f8ff", "#ffffff"]
   },
   {
     skyMid: "#717ab3",
@@ -1604,7 +1721,7 @@ function finishRun(won) {
     setOverlay(
       "Hoàn thành",
       "Bạn đã hoàn thành Hành Trình Di Tích Pixel",
-      `Năm khu đã được vượt qua trong ${formatTime(player.finishedTime)}. Nhấn để bắt đầu một chuyến đi mới.`,
+      `${LEVELS.length} khu vực đã được vượt qua trong ${formatTime(player.finishedTime)}. Nhấn để bắt đầu một chuyến đi mới.`,
       "Chơi lại từ đầu",
       true
     )
@@ -3532,6 +3649,16 @@ function drawSceneStructures(theme, horizonY) {
       drawBackdropTower(baseX + 78, horizonY + 14, 16, 26, main, accent)
       drawBackdropTower(baseX + 102, horizonY + 18, 12, 18, main, accent)
       drawBackdropHouse(baseX + 150, horizonY + 14, 30, 13, main, accent, "rgba(207, 247, 236, 0.2)")
+    } else if (theme.detailType === "forest") {
+      drawBackdropBamboo(baseX + 18, horizonY + 18, theme.floraColor, theme.floraAccent)
+      drawBackdropHouse(baseX + 78, horizonY + 16, 20, 11, main, accent, "rgba(210, 255, 208, 0.18)")
+      drawBackdropBamboo(baseX + 126, horizonY + 14, theme.floraColor, theme.floraAccent)
+      drawBackdropLantern(baseX + 184, horizonY + 20, main, "rgba(228, 255, 185, 0.26)")
+    } else if (theme.detailType === "shrine") {
+      drawBackdropTorii(baseX + 20, horizonY + 18, main, accent)
+      drawBackdropHouse(baseX + 76, horizonY + 14, 28, 14, main, accent, "rgba(255, 233, 178, 0.24)")
+      drawBackdropTower(baseX + 130, horizonY + 16, 14, 24, main, accent)
+      drawBackdropLantern(baseX + 176, horizonY + 18, main, "rgba(255, 214, 152, 0.28)")
     } else if (theme.detailType === "pass") {
       drawBackdropTorii(baseX + 18, horizonY + 16, main, accent)
       drawBackdropLantern(baseX + 66, horizonY + 20, main, "rgba(255, 176, 176, 0.34)")
@@ -3564,6 +3691,9 @@ function drawSceneFlora(theme, horizonY) {
       ctx.fillStyle = theme.floraAccent
       ctx.fillRect(x + 13, horizonY + 8, 3, 3)
       ctx.fillRect(x + 7, horizonY + 14, 2, 2)
+    } else if (theme.detailType === "shrine") {
+      drawBackdropLantern(x + 8, horizonY + 28, theme.floraColor, "rgba(255, 214, 152, 0.24)")
+      drawBackdropBamboo(x + 20, horizonY + 31, theme.floraColor, theme.floraAccent)
     } else if (theme.detailType === "pass") {
       drawBackdropLantern(x + 6, horizonY + 28, theme.floraColor, "rgba(255, 191, 187, 0.28)")
       drawBackdropBamboo(x + 18, horizonY + 31, theme.floraColor, theme.floraAccent)
@@ -4350,9 +4480,9 @@ loadLevel(0, true)
 state.overlayMode = "start"
 applyBottomHudState(readStoredHudCollapsed())
 setOverlay(
-  "Làng ninja mới",
-  "Đi qua làng, sân tập và tuyến nhiệm vụ chính",
-  "Đi qua làng, ghé sân tập quái, nói chuyện với NPC rồi bắt đầu tuyến nhiệm vụ chính.",
+  "Hành trình mở rộng",
+  "Đi qua làng, rừng, miếu cổ và pháo đài lõi",
+  "Khởi hành từ Làng Tre, ghé sân tập, băng qua rừng lá và miếu gió rồi tiến vào ải lửa trước khi đấu boss cuối.",
   "Bắt đầu hành trình",
   true
 )

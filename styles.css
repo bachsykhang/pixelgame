@@ -1,0 +1,319 @@
+:root {
+  --bg-top: #1e2a38;
+  --bg-mid: #2f4f5d;
+  --bg-bottom: #f2c572;
+  --panel: rgba(15, 27, 36, 0.86);
+  --panel-border: rgba(255, 225, 166, 0.18);
+  --accent: #f8d26b;
+  --accent-2: #e57c46;
+  --text-main: #fff4d6;
+  --text-soft: #d9c8a0;
+  --shadow: rgba(13, 17, 23, 0.38);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family: "Trebuchet MS", "Lucida Console", monospace;
+  color: var(--text-main);
+  background:
+    radial-gradient(circle at top left, rgba(248, 210, 107, 0.25), transparent 28%),
+    radial-gradient(circle at 80% 10%, rgba(229, 124, 70, 0.24), transparent 24%),
+    linear-gradient(180deg, var(--bg-top) 0%, var(--bg-mid) 52%, var(--bg-bottom) 100%);
+  overflow-x: hidden;
+}
+
+body::before,
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+
+body::before {
+  background:
+    linear-gradient(transparent 0%, rgba(255, 255, 255, 0.04) 50%, transparent 100%);
+  background-size: 100% 6px;
+  opacity: 0.15;
+}
+
+body::after {
+  background:
+    radial-gradient(circle at 10% 20%, rgba(255, 240, 200, 0.08) 0 2px, transparent 3px),
+    radial-gradient(circle at 70% 30%, rgba(255, 240, 200, 0.07) 0 2px, transparent 3px),
+    radial-gradient(circle at 40% 75%, rgba(255, 240, 200, 0.09) 0 2px, transparent 3px),
+    radial-gradient(circle at 85% 80%, rgba(255, 240, 200, 0.1) 0 2px, transparent 3px);
+}
+
+.shell {
+  width: min(1200px, calc(100% - 32px));
+  margin: 0 auto;
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 340px minmax(0, 1fr);
+  gap: 24px;
+  align-items: center;
+  padding: 28px 0;
+}
+
+.hero-panel,
+.game-panel {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 24px;
+  box-shadow: 0 24px 50px var(--shadow);
+  backdrop-filter: blur(10px);
+}
+
+.hero-panel {
+  padding: 30px 26px;
+  animation: rise-in 700ms ease-out;
+}
+
+.eyebrow {
+  margin: 0 0 12px;
+  color: var(--accent);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+}
+
+.hero-panel h1 {
+  margin: 0 0 12px;
+  font-family: Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif;
+  font-size: clamp(2.4rem, 7vw, 3.6rem);
+  line-height: 0.92;
+  text-transform: uppercase;
+  color: #fff8ea;
+  text-shadow: 4px 4px 0 rgba(229, 124, 70, 0.48);
+}
+
+.subtitle {
+  margin: 0;
+  color: var(--text-soft);
+  line-height: 1.7;
+}
+
+.controls-card {
+  margin-top: 28px;
+  padding: 18px;
+  border-radius: 18px;
+  background: rgba(248, 210, 107, 0.1);
+  border: 1px solid rgba(248, 210, 107, 0.16);
+}
+
+.controls-card p {
+  margin: 10px 0;
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  color: var(--text-soft);
+}
+
+.controls-card span {
+  color: #fff9e7;
+}
+
+.game-panel {
+  padding: 18px;
+  animation: rise-in 900ms ease-out;
+}
+
+.hud {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.hud-item {
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.hud-item strong {
+  display: block;
+  font-size: 1rem;
+  line-height: 1.35;
+}
+
+.hud-item--wide {
+  grid-column: span 2;
+}
+
+.label {
+  display: block;
+  color: var(--text-soft);
+  font-size: 0.8rem;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.canvas-wrap {
+  position: relative;
+  border-radius: 22px;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, #89c4ff 0%, #74a5f4 47%, #f3ce7d 100%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 5 / 3;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(7, 14, 18, 0.55);
+  transition: opacity 220ms ease, visibility 220ms ease;
+}
+
+.overlay.hidden {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.overlay-card {
+  width: min(92%, 420px);
+  padding: 22px 20px;
+  border-radius: 18px;
+  text-align: center;
+  background: rgba(16, 24, 29, 0.9);
+  border: 1px solid rgba(248, 210, 107, 0.2);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+}
+
+.overlay-kicker {
+  margin: 0 0 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent);
+  font-size: 0.78rem;
+}
+
+.overlay h2 {
+  margin: 0 0 12px;
+  line-height: 1.15;
+}
+
+.overlay p {
+  margin: 0 0 18px;
+  color: var(--text-soft);
+  line-height: 1.6;
+}
+
+button {
+  appearance: none;
+  border: 0;
+  border-radius: 14px;
+  cursor: pointer;
+  font: inherit;
+}
+
+#overlayButton {
+  padding: 14px 22px;
+  color: #2b1f12;
+  background: linear-gradient(180deg, #ffe59a 0%, #f0b454 100%);
+  box-shadow: 0 8px 0 rgba(110, 65, 26, 0.4);
+}
+
+#overlayButton:active {
+  transform: translateY(3px);
+  box-shadow: 0 5px 0 rgba(110, 65, 26, 0.4);
+}
+
+.touch-controls {
+  display: none;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.touch-btn {
+  min-height: 60px;
+  font-size: 1.5rem;
+  color: var(--text-main);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.touch-btn--dash {
+  background: linear-gradient(180deg, rgba(248, 210, 107, 0.28), rgba(229, 124, 70, 0.22));
+  border-color: rgba(248, 210, 107, 0.28);
+}
+
+.touch-btn:active,
+.touch-btn.active {
+  background: rgba(248, 210, 107, 0.26);
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 980px) {
+  .shell {
+    grid-template-columns: 1fr;
+    padding: 18px 0 28px;
+  }
+}
+
+@media (max-width: 760px) {
+  .shell {
+    width: min(100% - 20px, 720px);
+    gap: 16px;
+  }
+
+  .hero-panel,
+  .game-panel {
+    border-radius: 20px;
+  }
+
+  .hero-panel {
+    padding: 22px 18px;
+  }
+
+  .game-panel {
+    padding: 12px;
+  }
+
+  .hud-item--wide {
+    grid-column: span 1;
+  }
+
+  .touch-controls {
+    display: grid;
+  }
+
+  .controls-card p {
+    font-size: 0.95rem;
+  }
+}

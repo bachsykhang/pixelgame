@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pixel Relic Run</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="shell">
+    <section class="hero-panel">
+      <p class="eyebrow">HTML &bull; CSS &bull; JavaScript</p>
+      <h1>Pixel Relic Run</h1>
+      <p class="subtitle">
+        Bản nâng cấp thêm nhảy đôi, dash, checkpoint bằng cột lửa, bệ nảy và khả năng dẫm quái để mở đường tới cổng cổ vật.
+      </p>
+      <div class="controls-card">
+        <p><span>A / D</span> Di chuyển</p>
+        <p><span>W / Space / &uarr;</span> Nhảy và nhảy đôi</p>
+        <p><span>Shift / K</span> Dash cực nhanh</p>
+        <p><span>Dẫm từ trên</span> Hạ quái để hồi nhịp</p>
+        <p><span>Cột lửa</span> Lưu mốc hồi sinh</p>
+      </div>
+    </section>
+
+    <section class="game-panel">
+      <div class="hud">
+        <div class="hud-item">
+          <span class="label">Tinh thể</span>
+          <strong id="crystalCount">0 / 0</strong>
+        </div>
+        <div class="hud-item">
+          <span class="label">Máu</span>
+          <strong id="healthValue">3 / 3</strong>
+        </div>
+        <div class="hud-item">
+          <span class="label">Dash</span>
+          <strong id="dashValue">Sẵn sàng</strong>
+        </div>
+        <div class="hud-item">
+          <span class="label">Thời gian</span>
+          <strong id="timeValue">00:00.0</strong>
+        </div>
+        <div class="hud-item hud-item--wide">
+          <span class="label">Trạng thái</span>
+          <strong id="statusText">Khám phá tàn tích</strong>
+        </div>
+      </div>
+
+      <div class="canvas-wrap">
+        <canvas id="gameCanvas" width="320" height="192" aria-label="Pixel platformer canvas"></canvas>
+        <div class="overlay" id="overlay">
+          <div class="overlay-card">
+            <p class="overlay-kicker">Pixel Adventure+</p>
+            <h2 id="overlayTitle">Thu thập đủ tinh thể và mở cổng sáng</h2>
+            <p id="overlayText">
+              Dùng nhảy đôi để vượt vực, dash để băng ngang và chạm vào cột lửa để lưu checkpoint trước đoạn khó.
+            </p>
+            <button id="overlayButton" type="button">Bắt đầu chơi</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="touch-controls" aria-label="Touch controls">
+        <button class="touch-btn" data-action="left" type="button">&larr;</button>
+        <button class="touch-btn" data-action="jump" type="button">&uarr;</button>
+        <button class="touch-btn touch-btn--dash" data-action="dash" type="button">&#10022;</button>
+        <button class="touch-btn" data-action="right" type="button">&rarr;</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="game.js"></script>
+</body>
+</html>

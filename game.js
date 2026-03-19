@@ -1855,6 +1855,21 @@ function updateProjectiles(delta) {
     projectile.x += projectile.velocityX * delta
     projectile.y += projectile.velocityY * delta
 
+    if (projectile.kind === "blast") {
+      spawnParticles(
+        projectile.x + projectile.width / 2,
+        projectile.y + projectile.height / 2,
+        1,
+        ["#7af5ff", "#dfffff", "#8ab6ff"],
+        0.36,
+        0
+      )
+    } else if (projectile.kind === "orb") {
+      spawnParticles(projectile.x + 3, projectile.y + 3, 1, ["#f2779d", "#ffd4e4"], 0.24, 0)
+    } else if (projectile.kind === "shockwave" && Math.random() > 0.35) {
+      spawnParticles(projectile.x + projectile.width / 2, projectile.y + 2, 1, ["#ffd4e4", "#f2779d"], 0.18, 0)
+    }
+
     if (projectile.owner === "player") {
       if (projectileHitsSolid(projectile)) {
         spawnParticles(projectile.x, projectile.y, 8, ["#7af5ff", "#ffffff"], 1.1, 0.01)
@@ -2189,6 +2204,7 @@ function attemptDash() {
   player.coyoteTimer = 0
   state.screenShake = 2.1
   spawnParticles(player.x + player.width / 2, player.y + player.height / 2, 18, ["#ffe59a", "#f0b454", "#ffffff"], 2, 0.01)
+  spawnParticles(player.x + player.width / 2, player.y + player.height / 2, 10, ["#85f7ff", "#dfffff"], 1.6, 0.005)
   setStatus("Lướt kích hoạt", 20)
   playDashSound()
 }
@@ -2218,6 +2234,7 @@ function performSlash() {
   })
 
   spawnParticles(player.x + (player.facing > 0 ? player.width : 0), player.y + 8, 8, ["#ffe59a", "#ffffff"], 1.3, 0.01)
+  spawnParticles(player.x + (player.facing > 0 ? player.width : 0), player.y + 8, 6, ["#ffb36c", "#fff5c8"], 1.05, 0.005)
   setStatus("Chém mở đường", 18)
   playSlashSound()
 }
@@ -2246,6 +2263,7 @@ function castBlast() {
   })
 
   spawnParticles(player.x + player.width / 2, player.y + 7, 10, ["#7af5ff", "#ffffff"], 1.4, 0.01)
+  spawnParticles(player.x + player.width / 2, player.y + 7, 7, ["#7ab4ff", "#d5f2ff"], 1.1, 0.003)
   setStatus("Cầu năng lượng được phóng ra", 18)
   playBlastSound()
 }
@@ -2286,8 +2304,8 @@ function spawnTrailParticle() {
     velocityY: (Math.random() - 0.5) * 0.3,
     gravity: 0,
     life: 8 + Math.random() * 4,
-    size: 2,
-    color: Math.random() > 0.5 ? "#ffe59a" : "#ffffff"
+    size: 2 + Math.random(),
+    color: ["#ffe59a", "#ffffff", "#85f7ff", "#ff9b62"][Math.floor(Math.random() * 4)]
   })
 }
 
@@ -2303,6 +2321,21 @@ function updateParticles(delta) {
       particles.splice(index, 1)
     }
   }
+}
+
+function drawGroundShadow(x, y, width, alpha = 0.2) {
+  ctx.save()
+  ctx.fillStyle = `rgba(5, 8, 14, ${alpha})`
+  ctx.fillRect(x + 1, y, Math.max(2, width - 2), 2)
+  ctx.restore()
+}
+
+function drawGlowRect(x, y, width, height, color, alpha = 0.18, padding = 2) {
+  ctx.save()
+  ctx.globalAlpha = alpha
+  ctx.fillStyle = color
+  ctx.fillRect(x - padding, y - padding, width + padding * 2, height + padding * 2)
+  ctx.restore()
 }
 
 function render() {
@@ -2345,6 +2378,25 @@ function drawSky() {
   ctx.fillStyle = gradient
   ctx.fillRect(camera.x, camera.y, canvas.width, canvas.height)
 
+  const sunX = camera.x + canvas.width * 0.76
+  const sunY = camera.y + 36
+  const sunGlow = ctx.createRadialGradient(sunX, sunY, 8, sunX, sunY, 44)
+  sunGlow.addColorStop(0, "rgba(255, 247, 210, 0.95)")
+  sunGlow.addColorStop(0.35, "rgba(255, 224, 142, 0.38)")
+  sunGlow.addColorStop(1, "rgba(255, 224, 142, 0)")
+  ctx.fillStyle = sunGlow
+  ctx.fillRect(sunX - 44, sunY - 44, 88, 88)
+
+  for (let index = 0; index < 7; index += 1) {
+    const sparkleX = camera.x + 18 + index * 52 + (index % 2) * 12
+    const sparkleY = camera.y + 14 + (index % 3) * 11
+    const sparkleAlpha = 0.12 + (Math.sin(player.runTime * 1.7 + index) + 1) * 0.06
+    ctx.fillStyle = `rgba(255,255,255,${sparkleAlpha})`
+    ctx.fillRect(sparkleX, sparkleY, 2, 2)
+    ctx.fillRect(sparkleX + 1, sparkleY - 1, 1, 4)
+    ctx.fillRect(sparkleX - 1, sparkleY + 1, 4, 1)
+  }
+
   for (let index = 0; index < 5; index += 1) {
     const cloudX = camera.x * 0.25 + index * 88 + (index % 2) * 30
     const cloudY = camera.y * 0.08 + 18 + index * 9
@@ -2355,6 +2407,9 @@ function drawSky() {
 function drawParallax() {
   const palette = getCurrentPalette()
   const horizonY = state.currentLevel.height - 88
+
+  ctx.fillStyle = "rgba(255, 231, 176, 0.12)"
+  ctx.fillRect(camera.x, horizonY + 8, canvas.width, 20)
 
   ctx.fillStyle = palette.hillBack
   for (let index = 0; index < 9; index += 1) {
@@ -2420,16 +2475,20 @@ function drawExits() {
     const auraColor = isMissionGate ? "rgba(248, 210, 107, 0.22)" : "rgba(79, 209, 255, 0.18)"
     const auraWidth = (allCrystalsCollected ? 28 : 22) + Math.sin(exit.pulse) * 4
 
+    drawGlowRect(exit.x + 2, exit.y + 2, 12, 28, isMissionGate ? "#f8d26b" : "#85f7ff", 0.12, 4)
     ctx.fillStyle = pillarColor
     ctx.fillRect(exit.x + 4, exit.y, 8, 32)
     ctx.fillStyle = coreColor
     ctx.fillRect(exit.x, exit.y + 4, 16, 24)
+    ctx.fillStyle = "rgba(255, 255, 255, 0.26)"
+    ctx.fillRect(exit.x + 3, exit.y + 5, 2, 20)
 
     ctx.fillStyle = auraColor
     ctx.fillRect(exit.x - (auraWidth - 16) / 2, exit.y, auraWidth, 32)
 
     ctx.fillStyle = "rgba(255,255,255,0.8)"
     ctx.fillRect(exit.x + 6, exit.y + 8, 4, 2)
+    ctx.fillRect(exit.x + 6, exit.y + 14, 4, 1)
   })
 }
 
@@ -2444,15 +2503,26 @@ function drawNpcs() {
           ? { outfit: "#91583f", accent: "#85f7ff" }
           : { outfit: "#355e88", accent: "#f8d26b" }
 
+    drawGroundShadow(npc.x, npc.y + npc.height - 1, npc.width, 0.18)
+    if (nearbyNpc && nearbyNpc.id === npc.id) {
+      drawGlowRect(npc.x + 2, npc.y + 2, 10, 12, palette.accent, 0.14, 2)
+    }
+
+    ctx.fillStyle = "#131821"
+    ctx.fillRect(npc.x + 1, npc.y + 2, 12, 13)
     ctx.fillStyle = palette.outfit
-    ctx.fillRect(npc.x + 2, npc.y + 5, 10, 9)
+    ctx.fillRect(npc.x + 2, npc.y + 5, 10, 8)
     ctx.fillStyle = "#ffcf99"
     ctx.fillRect(npc.x + 4, npc.y + 2, 6, 5)
+    ctx.fillStyle = palette.accent
+    ctx.fillRect(npc.x + 3, npc.y + 1, 8, 2)
     ctx.fillStyle = "#1a1a1a"
     ctx.fillRect(npc.x + 5, npc.y + 4, 1, 1)
     ctx.fillRect(npc.x + 8, npc.y + 4, 1, 1)
+    ctx.fillStyle = "#efe6ce"
+    ctx.fillRect(npc.x + 5, npc.y + 6, 4, 1)
     ctx.fillStyle = palette.accent
-    ctx.fillRect(npc.x + 3, npc.y + 14, 8, 2)
+    ctx.fillRect(npc.x + 3, npc.y + 13, 8, 2)
 
     if (nearbyNpc && nearbyNpc.id === npc.id) {
       ctx.fillStyle = "rgba(255, 255, 255, 0.92)"
@@ -2484,11 +2554,13 @@ function drawCrystals() {
     }
 
     const bobOffset = Math.sin(crystal.bob) * 2
+    drawGlowRect(crystal.x, crystal.y - bobOffset, 8, 8, "#85f7ff", 0.14, 2)
     ctx.fillStyle = "#85f7ff"
     ctx.fillRect(crystal.x + 2, crystal.y - bobOffset, 4, 8)
     ctx.fillRect(crystal.x, crystal.y + 2 - bobOffset, 8, 4)
     ctx.fillStyle = "#d9ffff"
     ctx.fillRect(crystal.x + 3, crystal.y + 1 - bobOffset, 2, 2)
+    ctx.fillRect(crystal.x + 2, crystal.y + 6 - bobOffset, 1, 1)
   })
 }
 
@@ -2498,12 +2570,28 @@ function drawEnemies() {
       return
     }
 
-    ctx.fillStyle = enemy.variant === "ranged" ? "#4d3d7f" : "#6b2f50"
-    ctx.fillRect(enemy.x + 2, enemy.y + 2, 10, 10)
+    drawGroundShadow(enemy.x, enemy.y + enemy.height - 1, enemy.width, 0.22)
+
+    const outfitColor = enemy.variant === "ranged" ? "#4d3d7f" : "#6b2f50"
+    const accentColor = enemy.variant === "ranged" ? "#8ce6ff" : "#f2779d"
+    if (enemy.attackWindup > 0 || enemy.aggroTimer > 0) {
+      drawGlowRect(enemy.x + 1, enemy.y + 2, 12, 11, accentColor, enemy.attackWindup > 0 ? 0.18 : 0.1, 2)
+    }
+
+    ctx.fillStyle = "#1a1620"
+    ctx.fillRect(enemy.x + 1, enemy.y + 2, 12, 11)
+    ctx.fillStyle = outfitColor
+    ctx.fillRect(enemy.x + 2, enemy.y + 3, 10, 9)
+    ctx.fillStyle = "#221626"
+    ctx.fillRect(enemy.x + 3, enemy.y + 10, 8, 2)
     ctx.fillStyle = "#ef9f8f"
     ctx.fillRect(enemy.x + 4, enemy.y + 4, 6, 4)
-    ctx.fillStyle = enemy.attackWindup > 0 ? "#ffe59a" : enemy.variant === "ranged" ? "#8ce6ff" : "#f2779d"
+    ctx.fillStyle = "#f4ead7"
+    ctx.fillRect(enemy.x + 5, enemy.y + 7, 4, 1)
+    ctx.fillStyle = enemy.attackWindup > 0 ? "#ffe59a" : accentColor
     ctx.fillRect(enemy.x + (enemy.facing > 0 ? 9 : 3), enemy.y + 6, 2, 2)
+    ctx.fillStyle = accentColor
+    ctx.fillRect(enemy.x + (enemy.facing > 0 ? 10 : 1), enemy.y + 8, 2, 1)
     ctx.fillStyle = "#181818"
     ctx.fillRect(enemy.x + 4, enemy.y + 10, 2, 2)
     ctx.fillRect(enemy.x + 8, enemy.y + 10, 2, 2)
@@ -2518,14 +2606,25 @@ function drawBoss() {
   }
 
   const flash = boss.flashTimer > 0
+  drawGroundShadow(boss.x + 2, boss.y + boss.height - 1, boss.width - 4, 0.24)
+  drawGlowRect(boss.x + 6, boss.y + 5, 18, 16, boss.phase === 2 ? "#ffdd7a" : "#7af5ff", 0.12, 4)
+
+  ctx.fillStyle = flash ? "#fff7f2" : "#381926"
+  ctx.fillRect(boss.x + 3, boss.y + 3, 24, 21)
   ctx.fillStyle = flash ? "#fff7f2" : "#742f53"
   ctx.fillRect(boss.x + 4, boss.y + 4, 22, 20)
   ctx.fillStyle = "#ef9f8f"
   ctx.fillRect(boss.x + 8, boss.y + 8, 14, 7)
+  ctx.fillStyle = "#f5ebdc"
+  ctx.fillRect(boss.x + 10, boss.y + 16, 10, 1)
   ctx.fillStyle = boss.phase === 2 ? "#ffdd7a" : "#7af5ff"
   ctx.fillRect(boss.x + 12, boss.y + 12, 6, 6)
+  ctx.fillRect(boss.x + 11, boss.y + 11, 8, 1)
+  ctx.fillRect(boss.x + 11, boss.y + 18, 8, 1)
   ctx.fillStyle = "#1b1b1b"
   ctx.fillRect(boss.x + (boss.facing > 0 ? 20 : 8), boss.y + 16, 3, 2)
+  ctx.fillRect(boss.x + 6, boss.y + 6, 3, 2)
+  ctx.fillRect(boss.x + 21, boss.y + 6, 3, 2)
 
   if (boss.attackMode === "windup") {
     ctx.fillStyle = "rgba(255, 221, 122, 0.25)"
@@ -2536,6 +2635,9 @@ function drawBoss() {
 function drawProjectiles() {
   projectiles.forEach((projectile) => {
     if (projectile.kind === "blast") {
+      drawGlowRect(projectile.x, projectile.y, projectile.width, projectile.height, "#7af5ff", 0.2, 3)
+      ctx.fillStyle = "rgba(122, 245, 255, 0.4)"
+      ctx.fillRect(projectile.x - Math.sign(projectile.velocityX || 1) * 6, projectile.y + 1, 8, 2)
       ctx.fillStyle = "#7af5ff"
       ctx.fillRect(projectile.x, projectile.y, projectile.width, projectile.height)
       ctx.fillStyle = "#ffffff"
@@ -2544,14 +2646,18 @@ function drawProjectiles() {
     }
 
     if (projectile.kind === "orb") {
+      drawGlowRect(projectile.x, projectile.y, projectile.width, projectile.height, "#f2779d", 0.18, 3)
       ctx.fillStyle = "#f2779d"
       ctx.fillRect(projectile.x, projectile.y, projectile.width, projectile.height)
       ctx.fillStyle = "#ffffff"
       ctx.fillRect(projectile.x + 2, projectile.y + 2, 2, 2)
+      ctx.fillRect(projectile.x + 1, projectile.y + 1, 1, 1)
       return
     }
 
     if (projectile.kind === "kunai") {
+      ctx.fillStyle = "rgba(156, 200, 255, 0.25)"
+      ctx.fillRect(projectile.x - Math.sign(projectile.velocityX || 1) * 4, projectile.y + 1, 6, 1)
       ctx.fillStyle = "#9cc8ff"
       ctx.fillRect(projectile.x, projectile.y, projectile.width, projectile.height)
       ctx.fillStyle = "#ffffff"
@@ -2559,25 +2665,53 @@ function drawProjectiles() {
       return
     }
 
+    drawGlowRect(projectile.x, projectile.y, projectile.width, projectile.height, "#f2779d", 0.12, 2)
     ctx.fillStyle = "#f8d26b"
-    ctx.fillRect(projectile.x, projectile.y, projectile.width, projectile.height)
+    ctx.fillRect(projectile.x, projectile.y + 1, projectile.width, 3)
     ctx.fillStyle = "#ffffff"
-    ctx.fillRect(projectile.x + 2, projectile.y + 1, projectile.width - 4, 1)
+    ctx.fillRect(projectile.x + 2, projectile.y, projectile.width - 4, 1)
+    ctx.fillRect(projectile.x + 3, projectile.y + 4, projectile.width - 6, 1)
   })
 }
 
 function drawMeleeBursts() {
   meleeBursts.forEach((burst) => {
-    ctx.globalAlpha = Math.min(1, burst.life / 7) * 0.65
-    ctx.fillStyle = burst.owner === "enemy" ? "#f2779d" : "#ffe59a"
-    ctx.fillRect(burst.x, burst.y + 4, burst.width, 4)
-    ctx.fillStyle = burst.owner === "enemy" ? "#fff2f6" : "#ffffff"
-    if (burst.direction > 0) {
-      ctx.fillRect(burst.x + burst.width - 5, burst.y + 2, 4, burst.height - 4)
-    } else {
-      ctx.fillRect(burst.x + 1, burst.y + 2, 4, burst.height - 4)
-    }
-    ctx.globalAlpha = 1
+    const baseAlpha = Math.min(1, burst.life / 7) * 0.78
+    const mainColor = burst.owner === "enemy" ? "#f2779d" : "#ffe59a"
+    const highlightColor = burst.owner === "enemy" ? "#fff2f6" : "#ffffff"
+    const tipX = burst.direction > 0 ? burst.x + burst.width : burst.x
+    const tailX = burst.direction > 0 ? burst.x + 2 : burst.x + burst.width - 2
+
+    ctx.save()
+    ctx.globalAlpha = baseAlpha * 0.45
+    ctx.fillStyle = mainColor
+    ctx.beginPath()
+    ctx.moveTo(tailX, burst.y + burst.height - 1)
+    ctx.lineTo(tipX, burst.y + 1)
+    ctx.lineTo(tipX - burst.direction * 6, burst.y + burst.height + 1)
+    ctx.lineTo(tailX - burst.direction * 4, burst.y + burst.height + 3)
+    ctx.closePath()
+    ctx.fill()
+
+    ctx.globalAlpha = baseAlpha
+    ctx.fillStyle = mainColor
+    ctx.beginPath()
+    ctx.moveTo(tailX, burst.y + burst.height - 2)
+    ctx.lineTo(tipX - burst.direction * 1, burst.y + 2)
+    ctx.lineTo(tipX - burst.direction * 5, burst.y + burst.height - 1)
+    ctx.lineTo(tailX - burst.direction * 4, burst.y + burst.height)
+    ctx.closePath()
+    ctx.fill()
+
+    ctx.globalAlpha = baseAlpha
+    ctx.fillStyle = highlightColor
+    ctx.beginPath()
+    ctx.moveTo(tailX, burst.y + burst.height - 3)
+    ctx.lineTo(tipX - burst.direction * 2, burst.y + 3)
+    ctx.lineTo(tipX - burst.direction * 4, burst.y + burst.height - 3)
+    ctx.closePath()
+    ctx.fill()
+    ctx.restore()
   })
 }
 
@@ -2586,6 +2720,10 @@ function drawParticles() {
     ctx.globalAlpha = Math.min(1, particle.life / 12)
     ctx.fillStyle = particle.color
     ctx.fillRect(particle.x, particle.y, particle.size, particle.size)
+    if (particle.size > 1.8) {
+      ctx.fillStyle = "rgba(255,255,255,0.72)"
+      ctx.fillRect(particle.x + 0.5, particle.y + 0.5, Math.max(1, particle.size - 1.2), Math.max(1, particle.size - 1.2))
+    }
   })
 
   ctx.globalAlpha = 1
@@ -2597,41 +2735,87 @@ function drawPlayer() {
     return
   }
 
+  const bob = player.grounded && Math.abs(player.velocityX) > 0.12 ? Math.sin(player.runTime * 18) * 0.5 : 0
+  const bodyY = Math.round(player.y + bob)
+  const scarfDrift = Math.round((Math.sin(player.runTime * 14) * 1.2 + Math.abs(player.velocityX) * 1.8 + player.dashTimer * 0.2) * player.facing)
+  drawGroundShadow(player.x, player.y + player.height - 1, player.width, 0.22)
+
   if (player.dashTimer > 0) {
-    ctx.fillStyle = "rgba(255, 229, 154, 0.35)"
-    ctx.fillRect(player.x - player.facing * 4, player.y + 3, 8, 8)
+    for (let ghost = 3; ghost >= 1; ghost -= 1) {
+      const offset = player.facing * ghost * 4
+      const alpha = 0.1 + ghost * 0.05
+      ctx.fillStyle = `rgba(255, 229, 154, ${alpha})`
+      ctx.fillRect(player.x - offset + 2, bodyY + 3, 8, 9)
+    }
+    drawGlowRect(player.x + 2, bodyY + 2, 8, 10, "#ffe59a", 0.12, 3)
   }
 
   if (player.isGuarding) {
-    ctx.fillStyle = "rgba(122, 245, 255, 0.22)"
-    ctx.fillRect(player.x - 3, player.y - 2, player.width + 6, player.height + 4)
+    drawGlowRect(player.x - 1, bodyY, player.width + 2, player.height, "#7af5ff", 0.18, 4)
+    ctx.fillStyle = "rgba(122, 245, 255, 0.24)"
+    ctx.fillRect(player.x - 3, bodyY - 2, player.width + 6, player.height + 4)
   }
 
-  ctx.fillStyle = "#294c60"
-  ctx.fillRect(player.x + 3, player.y + 2, 6, 6)
+  ctx.fillStyle = "#11161d"
+  ctx.fillRect(player.x + 1, bodyY + 1, 10, 13)
+  ctx.fillStyle = "#ff654f"
+  if (player.facing > 0) {
+    ctx.fillRect(player.x - 2 - scarfDrift, bodyY + 6, 5, 2)
+    ctx.fillRect(player.x - 4 - scarfDrift, bodyY + 7, 4, 1)
+  } else {
+    ctx.fillRect(player.x + 9 - scarfDrift, bodyY + 6, 5, 2)
+    ctx.fillRect(player.x + 12 - scarfDrift, bodyY + 7, 4, 1)
+  }
+
+  ctx.fillStyle = "#2e4f71"
+  ctx.fillRect(player.x + 3, bodyY + 2, 6, 3)
+  ctx.fillStyle = "#78c0ff"
+  ctx.fillRect(player.x + 3, bodyY + 2, 6, 1)
   ctx.fillStyle = "#ffcf99"
-  ctx.fillRect(player.x + 4, player.y + 4, 4, 4)
-  ctx.fillStyle = "#d26b3b"
-  ctx.fillRect(player.x + 2, player.y + 8, 8, 4)
-  ctx.fillStyle = "#263f68"
-  ctx.fillRect(player.x + 2, player.y + 12, 3, 2)
-  ctx.fillRect(player.x + 7, player.y + 12, 3, 2)
+  ctx.fillRect(player.x + 4, bodyY + 4, 4, 4)
+  ctx.fillStyle = "#d26045"
+  ctx.fillRect(player.x + 2, bodyY + 8, 8, 3)
+  ctx.fillStyle = "#f7d98b"
+  ctx.fillRect(player.x + 3, bodyY + 8, 6, 1)
+  ctx.fillStyle = "#203a66"
+  ctx.fillRect(player.x + 2, bodyY + 11, 3, 3)
+  ctx.fillRect(player.x + 7, bodyY + 11, 3, 3)
   ctx.fillStyle = "#101010"
-  ctx.fillRect(player.x + (player.facing > 0 ? 7 : 5), player.y + 5, 1, 1)
+  ctx.fillRect(player.x + 2, bodyY + 14, 3, 1)
+  ctx.fillRect(player.x + 7, bodyY + 14, 3, 1)
+  ctx.fillStyle = "#101010"
+  ctx.fillRect(player.x + (player.facing > 0 ? 7 : 5), bodyY + 5, 1, 1)
+  ctx.fillStyle = "#ffe59a"
+  ctx.fillRect(player.x + (player.facing > 0 ? 8 : 4), bodyY + 3, 1, 1)
 
   if (player.attackPoseTimer > 0) {
+    drawGlowRect(
+      player.facing > 0 ? player.x + 10 : player.x - 2,
+      bodyY + 7,
+      4,
+      3,
+      "#ffe59a",
+      0.22,
+      2
+    )
     ctx.fillStyle = "#ffe59a"
     if (player.facing > 0) {
-      ctx.fillRect(player.x + 10, player.y + 8, 4, 2)
+      ctx.fillRect(player.x + 10, bodyY + 8, 4, 2)
+      ctx.fillStyle = "#ffffff"
+      ctx.fillRect(player.x + 11, bodyY + 7, 3, 1)
     } else {
-      ctx.fillRect(player.x - 2, player.y + 8, 4, 2)
+      ctx.fillRect(player.x - 2, bodyY + 8, 4, 2)
+      ctx.fillStyle = "#ffffff"
+      ctx.fillRect(player.x - 2, bodyY + 7, 3, 1)
     }
   }
 
   if (player.canDash && player.dashCooldown <= 0) {
+    drawGlowRect(player.x + 1, bodyY + 2, 10, 11, "#85f7ff", 0.06, 2)
     ctx.fillStyle = "#ffe59a"
-    ctx.fillRect(player.x + 1, player.y + 6, 1, 1)
-    ctx.fillRect(player.x + 10, player.y + 3, 1, 1)
+    ctx.fillRect(player.x + 1, bodyY + 6, 1, 1)
+    ctx.fillRect(player.x + 10, bodyY + 3, 1, 1)
+    ctx.fillRect(player.x + 9, bodyY + 12, 1, 1)
   }
 }
 

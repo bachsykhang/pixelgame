@@ -3,69 +3,98 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pixel Relic Run</title>
+  <title>Pixel Relic Saga</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <main class="shell">
     <section class="hero-panel">
-      <p class="eyebrow">HTML &bull; CSS &bull; JavaScript</p>
-      <h1>Pixel Relic Run</h1>
+      <p class="eyebrow">HTML &bull; CSS &bull; JavaScript Action Platformer</p>
+      <h1>Pixel Relic Saga</h1>
       <p class="subtitle">
-        Bản nâng cấp thêm nhảy đôi, dash, checkpoint bằng cột lửa, bệ nảy và khả năng dẫm quái để mở đường tới cổng cổ vật.
+        Ban nang cap nay co nhieu man, boss cuoi, am thanh synth, ki nang chem va cau nang luong, cung voi che do gong de hoi mau bang noi luc.
       </p>
       <div class="controls-card">
-        <p><span>A / D</span> Di chuyển</p>
-        <p><span>W / Space / &uarr;</span> Nhảy và nhảy đôi</p>
-        <p><span>Shift / K</span> Dash cực nhanh</p>
-        <p><span>Dẫm từ trên</span> Hạ quái để hồi nhịp</p>
-        <p><span>Cột lửa</span> Lưu mốc hồi sinh</p>
+        <p><span>A / D</span> Di chuyen</p>
+        <p><span>W / Space</span> Nhay va nhay doi</p>
+        <p><span>Shift</span> Dash</p>
+        <p><span>J</span> Chem gan</p>
+        <p><span>L</span> Ban cau nang luong</p>
+        <p><span>Giu F</span> Gong de hoi mau</p>
+        <p><span>R</span> Choi lai tu dau</p>
       </div>
     </section>
 
     <section class="game-panel">
       <div class="hud">
         <div class="hud-item">
-          <span class="label">Tinh thể</span>
+          <span class="label">Man</span>
+          <strong id="levelValue">1</strong>
+        </div>
+        <div class="hud-item">
+          <span class="label">Tinh the</span>
           <strong id="crystalCount">0 / 0</strong>
         </div>
         <div class="hud-item">
-          <span class="label">Máu</span>
-          <strong id="healthValue">3 / 3</strong>
-        </div>
-        <div class="hud-item">
           <span class="label">Dash</span>
-          <strong id="dashValue">Sẵn sàng</strong>
+          <strong id="dashValue">San sang</strong>
         </div>
         <div class="hud-item">
-          <span class="label">Thời gian</span>
+          <span class="label">Thoi gian</span>
           <strong id="timeValue">00:00.0</strong>
         </div>
         <div class="hud-item hud-item--wide">
-          <span class="label">Trạng thái</span>
-          <strong id="statusText">Khám phá tàn tích</strong>
+          <span class="label">Mau</span>
+          <div class="meter">
+            <div class="meter-fill meter-fill--health" id="healthFill"></div>
+          </div>
+          <strong id="healthText">100 / 100</strong>
+        </div>
+        <div class="hud-item hud-item--wide">
+          <span class="label">Noi luc</span>
+          <div class="meter">
+            <div class="meter-fill meter-fill--spirit" id="spiritFill"></div>
+          </div>
+          <strong id="spiritText">50 / 100</strong>
+        </div>
+        <div class="hud-item hud-item--full">
+          <span class="label">Trang thai</span>
+          <strong id="statusText">San sang vao tan tich</strong>
         </div>
       </div>
 
       <div class="canvas-wrap">
-        <canvas id="gameCanvas" width="320" height="192" aria-label="Pixel platformer canvas"></canvas>
+        <div class="stage-chip" id="stageChip">Man 1 - Sunken Gate</div>
+        <div class="boss-bar hidden" id="bossBar" aria-live="polite">
+          <div class="boss-bar__top">
+            <span id="bossName">Guardian Core</span>
+            <strong id="bossText">Boss</strong>
+          </div>
+          <div class="boss-meter">
+            <div class="boss-meter__fill" id="bossFill"></div>
+          </div>
+        </div>
+        <canvas id="gameCanvas" width="384" height="224" aria-label="Pixel platformer canvas"></canvas>
         <div class="overlay" id="overlay">
           <div class="overlay-card">
-            <p class="overlay-kicker">Pixel Adventure+</p>
-            <h2 id="overlayTitle">Thu thập đủ tinh thể và mở cổng sáng</h2>
+            <p class="overlay-kicker">Boss Update</p>
+            <h2 id="overlayTitle">Vuot qua ba man va danh bai boss cuoi</h2>
             <p id="overlayText">
-              Dùng nhảy đôi để vượt vực, dash để băng ngang và chạm vào cột lửa để lưu checkpoint trước đoạn khó.
+              Ban co the chem, ban cau nang luong, dash tren khong va giu the gong de doi noi luc lay mau truoc tran boss.
             </p>
-            <button id="overlayButton" type="button">Bắt đầu chơi</button>
+            <button id="overlayButton" type="button">Bat dau hanh trinh</button>
           </div>
         </div>
       </div>
 
       <div class="touch-controls" aria-label="Touch controls">
-        <button class="touch-btn" data-action="left" type="button">&larr;</button>
-        <button class="touch-btn" data-action="jump" type="button">&uarr;</button>
-        <button class="touch-btn touch-btn--dash" data-action="dash" type="button">&#10022;</button>
-        <button class="touch-btn" data-action="right" type="button">&rarr;</button>
+        <button class="touch-btn" data-action="left" type="button">LEFT</button>
+        <button class="touch-btn" data-action="right" type="button">RIGHT</button>
+        <button class="touch-btn" data-action="jump" type="button">JUMP</button>
+        <button class="touch-btn touch-btn--dash" data-action="dash" type="button">DASH</button>
+        <button class="touch-btn" data-action="slash" type="button">SLASH</button>
+        <button class="touch-btn" data-action="blast" type="button">BLAST</button>
+        <button class="touch-btn touch-btn--wide" data-action="guard" type="button">GUARD</button>
       </div>
     </section>
   </main>

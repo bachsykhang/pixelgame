@@ -1,193 +1,325 @@
-const canvas = document.getElementById("gameCanvas");
-const ctx = canvas.getContext("2d");
-ctx.imageSmoothingEnabled = false;
+const canvas = document.getElementById("gameCanvas")
+const ctx = canvas.getContext("2d")
+ctx.imageSmoothingEnabled = false
 
-const crystalCountEl = document.getElementById("crystalCount");
-const healthValueEl = document.getElementById("healthValue");
-const dashValueEl = document.getElementById("dashValue");
-const timeValueEl = document.getElementById("timeValue");
-const statusTextEl = document.getElementById("statusText");
-const overlayEl = document.getElementById("overlay");
-const overlayTitleEl = document.getElementById("overlayTitle");
-const overlayTextEl = document.getElementById("overlayText");
-const overlayButtonEl = document.getElementById("overlayButton");
-const touchButtons = document.querySelectorAll(".touch-btn");
+const levelValueEl = document.getElementById("levelValue")
+const crystalCountEl = document.getElementById("crystalCount")
+const dashValueEl = document.getElementById("dashValue")
+const timeValueEl = document.getElementById("timeValue")
+const healthFillEl = document.getElementById("healthFill")
+const healthTextEl = document.getElementById("healthText")
+const spiritFillEl = document.getElementById("spiritFill")
+const spiritTextEl = document.getElementById("spiritText")
+const statusTextEl = document.getElementById("statusText")
+const stageChipEl = document.getElementById("stageChip")
+const bossBarEl = document.getElementById("bossBar")
+const bossNameEl = document.getElementById("bossName")
+const bossTextEl = document.getElementById("bossText")
+const bossFillEl = document.getElementById("bossFill")
+const overlayEl = document.getElementById("overlay")
+const overlayTitleEl = document.getElementById("overlayTitle")
+const overlayTextEl = document.getElementById("overlayText")
+const overlayButtonEl = document.getElementById("overlayButton")
+const touchButtons = document.querySelectorAll(".touch-btn")
 
-const TILE = 16;
-const GRAVITY = 0.42;
-const FRICTION = 0.78;
-const PLAYER_ACCEL = 0.55;
-const PLAYER_MAX_SPEED = 2.45;
-const JUMP_FORCE = -6.2;
-const DOUBLE_JUMP_FORCE = -5.4;
-const JUMP_BUFFER_FRAMES = 8;
-const COYOTE_FRAMES = 7;
-const DASH_SPEED = 4.9;
-const DASH_DURATION = 10;
-const DASH_COOLDOWN = 84;
-const JUMP_PAD_FORCE = -8.8;
-const KNOCKBACK_FORCE = 3.1;
-const MAX_FALL_SPEED = 8.5;
-const MAX_HEALTH = 3;
+const TILE = 16
+const GRAVITY = 0.42
+const FRICTION = 0.78
+const PLAYER_ACCEL = 0.56
+const PLAYER_MAX_SPEED = 2.5
+const JUMP_FORCE = -6.3
+const DOUBLE_JUMP_FORCE = -5.6
+const JUMP_BUFFER_FRAMES = 8
+const COYOTE_FRAMES = 7
+const DASH_SPEED = 5.1
+const DASH_DURATION = 10
+const DASH_COOLDOWN = 82
+const JUMP_PAD_FORCE = -8.7
+const MAX_FALL_SPEED = 8.8
+const SLASH_DAMAGE = 18
+const BLAST_DAMAGE = 15
+const BLAST_COST = 20
+const GUARD_HEAL_RATE = 0.18
+const GUARD_SPIRIT_RATE = 0.45
 
-const RAW_LEVEL_MAP = [
-  "....................................................................",
-  "....................................................................",
-  "....................................................................",
-  "....................................................................",
-  "..........C....................C.....................................",
-  ".....###..........###....................###.........E...............",
-  "....................................C...............................",
-  "...P.............S........J....####.............C...................",
-  "########..............#####..................######..................",
-  "..............C................................................X.....",
-  ".........####.................S...........E............#####........",
-  "....................#######...........########......................",
-  "...C...........E....................................................",
-  "#########....................C.................######...............",
-  "......B.......J.....###.............S.......B.......C..............",
-  "###############################....###############################..."
-];
+const LEVELS = [
+  {
+    name: "Man 1 - Sunken Gate",
+    objective: "Gom tinh the va chay den cong sang",
+    palette: {
+      skyTop: "#8ec9ff",
+      skyBottom: "#f3c97d",
+      hillBack: "#557a6c",
+      hillFront: "#355748",
+      tileTop: "#987654",
+      tileSide: "#6d4a32"
+    },
+    map: [
+      "..............................................................",
+      "..............................................................",
+      "..............................................................",
+      "..............................................................",
+      ".............C..............E................................",
+      ".....###............###.............C........................",
+      "..P........B..............................J..................",
+      "######............S...........####....................###....",
+      ".............C...........E.................#####.............",
+      "....####.......................C.........................X...",
+      "....................####.................####...............#",
+      "..C........................................................#",
+      "#########..............J.............B.....................#",
+      "...............E..................#####....................#",
+      "...........................................................#",
+      "#########################....###############################"
+    ]
+  },
+  {
+    name: "Man 2 - Ember Crossing",
+    objective: "Vuot qua doan lua va mo cong thu hai",
+    palette: {
+      skyTop: "#625cb8",
+      skyBottom: "#f49c7b",
+      hillBack: "#554a73",
+      hillFront: "#2b2f58",
+      tileTop: "#8e6b4c",
+      tileSide: "#5d3e2d"
+    },
+    map: [
+      "..............................................................",
+      "..............................................................",
+      "...................................C.........................",
+      "...............###............................E..............",
+      "...P.....C...................J.....................####......",
+      "#####...............S..............####......................",
+      "..........B...............E....................C............",
+      "................####.................S...............J.......",
+      "....####....................###................#####........",
+      ".....................C..................E................X..",
+      "..J...........#####..............C.................####.....",
+      "......................S.....................B...............",
+      "...C..........E...................####......................",
+      "########..............####.................................#",
+      ".................J.............C....................######.#",
+      "########################....###############################."
+    ]
+  },
+  {
+    name: "Man 3 - Core Citadel",
+    objective: "Danh bai Guardian Core",
+    palette: {
+      skyTop: "#37253d",
+      skyBottom: "#7c3f4f",
+      hillBack: "#48314f",
+      hillFront: "#241929",
+      tileTop: "#75616a",
+      tileSide: "#3d3138"
+    },
+    boss: {
+      name: "Guardian Core",
+      maxHealth: 260,
+      x: 35,
+      y: 6
+    },
+    map: [
+      "...............................................",
+      "...............................................",
+      "...............................................",
+      "......####......................####...........",
+      "...............................................",
+      "..P.....B......................................",
+      "#####.................####.....................",
+      "#.............................................#",
+      "#..................#####......................#",
+      "#.............................................#",
+      "#.......####......................####........#",
+      "#.............................................#",
+      "#.............................................#",
+      "###############################################"
+    ]
+  }
+]
 
-const LEVEL_MAP = normalizeMap(RAW_LEVEL_MAP);
-
-const keys = {
+const input = {
   left: false,
-  right: false
-};
+  right: false,
+  guard: false
+}
 
-let gameRunning = false;
-let lastTime = 0;
-let screenShake = 0;
+const state = {
+  currentLevelIndex: 0,
+  currentLevel: null,
+  totalCrystals: 0,
+  boss: null,
+  nextEntityId: 1,
+  overlayMode: "start",
+  nextLevelIndex: null,
+  gameRunning: false,
+  lastTime: 0,
+  screenShake: 0,
+  status: {
+    text: "San sang vao tan tich",
+    hold: 0
+  }
+}
 
-const statusState = {
-  text: "Khám phá tàn tích",
-  hold: 0
-};
-
-const particles = [];
-const levelState = buildLevel(LEVEL_MAP);
-const totalCrystals = levelState.crystals.length;
-const world = {
-  width: levelState.width,
-  height: levelState.height
-};
+const camera = {
+  x: 0,
+  y: 0
+}
 
 const player = {
-  x: levelState.playerSpawn.x,
-  y: levelState.playerSpawn.y,
+  x: 0,
+  y: 0,
   width: 12,
   height: 14,
   velocityX: 0,
   velocityY: 0,
   facing: 1,
   grounded: false,
-  health: MAX_HEALTH,
+  maxHealth: 100,
+  health: 100,
+  maxSpirit: 100,
+  spirit: 60,
   crystals: 0,
+  spawnX: 0,
+  spawnY: 0,
   hurtTimer: 0,
-  spawnX: levelState.playerSpawn.x,
-  spawnY: levelState.playerSpawn.y,
   coyoteTimer: 0,
   jumpBuffer: 0,
   airJumps: 1,
   canDash: true,
   dashTimer: 0,
   dashCooldown: 0,
+  attackCooldown: 0,
+  attackPoseTimer: 0,
+  blastCooldown: 0,
+  guardSoundTimer: 0,
+  isGuarding: false,
   runTime: 0,
   finishedTime: 0
-};
-
-const camera = {
-  x: 0,
-  y: 0
-};
-
-function normalizeMap(rows) {
-  const maxWidth = Math.max(...rows.map((row) => row.length));
-  return rows.map((row) => row.padEnd(maxWidth, "."));
 }
 
-function buildLevel(map) {
-  const solids = [];
-  const crystals = [];
-  const spikes = [];
-  const enemies = [];
-  const beacons = [];
-  const jumpPads = [];
-  let exit = { x: 0, y: 0, width: TILE, height: TILE * 2, pulse: 0 };
-  let playerSpawn = { x: TILE * 2, y: TILE * 2 };
+const particles = []
+const projectiles = []
+const meleeBursts = []
+
+const audioState = {
+  ctx: null,
+  master: null,
+  unlocked: false
+}
+
+function makeId() {
+  const id = state.nextEntityId
+  state.nextEntityId += 1
+  return id
+}
+
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value))
+}
+
+function normalizeMap(rows) {
+  const maxWidth = Math.max(...rows.map((row) => row.length))
+  return rows.map((row) => row.padEnd(maxWidth, "."))
+}
+
+function intersects(a, b) {
+  return (
+    a.x < b.x + b.width &&
+    a.x + a.width > b.x &&
+    a.y < b.y + b.height &&
+    a.y + a.height > b.y
+  )
+}
+
+function buildLevel(config) {
+  const map = normalizeMap(config.map)
+  const solids = []
+  const crystals = []
+  const spikes = []
+  const enemies = []
+  const beacons = []
+  const jumpPads = []
+  let exit = null
+  let playerSpawn = { x: TILE * 2, y: TILE * 2 }
 
   map.forEach((row, rowIndex) => {
-    [...row].forEach((cell, columnIndex) => {
-      const x = columnIndex * TILE;
-      const y = rowIndex * TILE;
+    ;[...row].forEach((cell, columnIndex) => {
+      const x = columnIndex * TILE
+      const y = rowIndex * TILE
 
       if (cell === "#") {
-        solids.push({ x, y, width: TILE, height: TILE });
+        solids.push({ x, y, width: TILE, height: TILE })
       }
 
       if (cell === "C") {
         crystals.push({
+          id: makeId(),
           x: x + 4,
           y: y + 4,
           width: 8,
           height: 8,
           collected: false,
           bob: Math.random() * Math.PI * 2
-        });
+        })
       }
 
       if (cell === "S") {
-        spikes.push({ x, y: y + 8, width: TILE, height: 8 });
+        spikes.push({ x, y: y + 8, width: TILE, height: 8 })
       }
 
       if (cell === "E") {
-        const initialVelocityX = Math.random() > 0.5 ? 0.6 : -0.6;
+        const initialVelocityX = columnIndex % 2 === 0 ? 0.65 : -0.65
         enemies.push({
+          id: makeId(),
           x: x + 1,
           y,
           width: 14,
           height: 14,
+          health: 32,
+          maxHealth: 32,
           velocityX: initialVelocityX,
-          spawnX: x + 1,
-          spawnY: y,
+          velocityY: 0,
           initialVelocityX,
-          leftBound: x - TILE * 2,
+          leftBound: x - TILE * 3,
           rightBound: x + TILE * 4,
-          defeated: false
-        });
+          dead: false
+        })
       }
 
       if (cell === "B") {
         beacons.push({
+          id: makeId(),
           x: x + 1,
           y: y - 8,
           width: 14,
           height: 24,
           active: false,
           glow: Math.random() * Math.PI * 2
-        });
+        })
       }
 
       if (cell === "J") {
         jumpPads.push({
+          id: makeId(),
           x,
           y: y + 10,
           width: TILE,
           height: 6,
           bounce: 0
-        });
+        })
       }
 
       if (cell === "X") {
-        exit = { x, y: y - TILE, width: TILE, height: TILE * 2, pulse: 0 };
+        exit = { x, y: y - TILE, width: TILE, height: TILE * 2, pulse: 0 }
       }
 
       if (cell === "P") {
-        playerSpawn = { x: x + 2, y: y - 6 };
+        playerSpawn = { x: x + 2, y: y - 6 }
       }
-    });
-  });
+    })
+  })
 
   return {
     width: map[0].length * TILE,
@@ -200,364 +332,619 @@ function buildLevel(map) {
     jumpPads,
     exit,
     playerSpawn
-  };
+  }
 }
 
-function resetGame(showOverlay = true) {
-  gameRunning = false;
-  keys.left = false;
-  keys.right = false;
-  particles.length = 0;
-  screenShake = 0;
-
-  player.spawnX = levelState.playerSpawn.x;
-  player.spawnY = levelState.playerSpawn.y;
-  player.x = player.spawnX;
-  player.y = player.spawnY;
-  player.velocityX = 0;
-  player.velocityY = 0;
-  player.facing = 1;
-  player.grounded = false;
-  player.health = MAX_HEALTH;
-  player.crystals = 0;
-  player.hurtTimer = 0;
-  player.coyoteTimer = 0;
-  player.jumpBuffer = 0;
-  player.airJumps = 1;
-  player.canDash = true;
-  player.dashTimer = 0;
-  player.dashCooldown = 0;
-  player.runTime = 0;
-  player.finishedTime = 0;
-
-  levelState.crystals.forEach((crystal) => {
-    crystal.collected = false;
-    crystal.bob = Math.random() * Math.PI * 2;
-  });
-
-  levelState.enemies.forEach((enemy) => {
-    enemy.x = enemy.spawnX;
-    enemy.y = enemy.spawnY;
-    enemy.velocityX = enemy.initialVelocityX;
-    enemy.defeated = false;
-  });
-
-  levelState.beacons.forEach((beacon) => {
-    beacon.active = false;
-    beacon.glow = Math.random() * Math.PI * 2;
-  });
-
-  levelState.jumpPads.forEach((pad) => {
-    pad.bounce = 0;
-  });
-
-  levelState.exit.pulse = 0;
-
-  camera.x = clamp(player.spawnX - canvas.width / 2 + player.width / 2, 0, world.width - canvas.width);
-  camera.y = clamp(player.spawnY - canvas.height / 2 + player.height / 2, 0, world.height - canvas.height);
-
-  setStatus("Khám phá tàn tích");
-
-  if (showOverlay) {
-    setOverlay(
-      "Thu thập đủ tinh thể và mở cổng sáng",
-      "Nhảy đôi để vượt vực, dash để băng ngang và chạm vào cột lửa để lưu checkpoint trước đoạn khó.",
-      "Bắt đầu chơi",
-      true
-    );
-  } else {
-    setOverlay("", "", "", false);
+function createBoss(config) {
+  return {
+    id: "boss",
+    name: config.name,
+    x: config.x * TILE,
+    y: config.y * TILE,
+    width: 30,
+    height: 28,
+    velocityX: 0,
+    velocityY: 0,
+    health: config.maxHealth,
+    maxHealth: config.maxHealth,
+    facing: -1,
+    grounded: false,
+    phase: 1,
+    attackMode: "idle",
+    attackCooldown: 70,
+    attackIndex: -1,
+    modeTimer: 0,
+    shotTimer: 0,
+    shotsRemaining: 0,
+    flashTimer: 0,
+    hitWall: false,
+    hasLaunched: false
   }
-
-  render();
 }
 
-function refreshHud() {
-  crystalCountEl.textContent = `${player.crystals} / ${totalCrystals}`;
-  healthValueEl.textContent = `${player.health} / ${MAX_HEALTH}`;
-
-  if (player.dashTimer > 0) {
-    dashValueEl.textContent = "Đang lướt";
-  } else if (!player.canDash && player.dashCooldown <= 0) {
-    dashValueEl.textContent = "Chạm đất";
-  } else if (player.dashCooldown > 0) {
-    dashValueEl.textContent = `Hồi ${Math.max(1, Math.ceil(player.dashCooldown / 12))}`;
-  } else {
-    dashValueEl.textContent = "Sẵn sàng";
-  }
-
-  const displayedTime = gameRunning ? player.runTime : player.finishedTime || player.runTime;
-  timeValueEl.textContent = formatTime(displayedTime);
-  statusTextEl.textContent = statusState.text;
+function getCurrentPalette() {
+  return state.currentLevel.config.palette
 }
 
-function setStatus(text, hold = 0) {
-  statusState.text = text;
-  statusState.hold = hold;
-  refreshHud();
-}
+function loadLevel(index, resetRun) {
+  const config = LEVELS[index]
+  const parsed = buildLevel(config)
 
-function getDefaultStatus() {
-  if (player.crystals === totalCrystals) {
-    return "Cổng sáng đã được kích hoạt";
+  state.currentLevelIndex = index
+  state.currentLevel = { ...parsed, config }
+  state.totalCrystals = parsed.crystals.length
+  state.boss = config.boss ? createBoss(config.boss) : null
+
+  projectiles.length = 0
+  particles.length = 0
+  meleeBursts.length = 0
+  state.screenShake = 0
+
+  if (resetRun) {
+    player.runTime = 0
+    player.finishedTime = 0
   }
 
-  if (intersects(player, levelState.exit)) {
-    return "Cần đủ tinh thể để mở cổng";
-  }
+  player.health = player.maxHealth
+  player.spirit = 70
+  player.crystals = 0
+  player.x = parsed.playerSpawn.x
+  player.y = parsed.playerSpawn.y
+  player.spawnX = parsed.playerSpawn.x
+  player.spawnY = parsed.playerSpawn.y
+  player.velocityX = 0
+  player.velocityY = 0
+  player.facing = 1
+  player.grounded = false
+  player.hurtTimer = 0
+  player.coyoteTimer = 0
+  player.jumpBuffer = 0
+  player.airJumps = 1
+  player.canDash = true
+  player.dashTimer = 0
+  player.dashCooldown = 0
+  player.attackCooldown = 0
+  player.attackPoseTimer = 0
+  player.blastCooldown = 0
+  player.guardSoundTimer = 0
+  player.isGuarding = false
 
-  return "Tìm beacon và gom tinh thể";
-}
+  input.left = false
+  input.right = false
+  input.guard = false
 
-function tickStatus(delta) {
-  if (statusState.hold > 0) {
-    statusState.hold = Math.max(0, statusState.hold - delta);
-  }
+  camera.x = clamp(player.spawnX - canvas.width / 2, 0, Math.max(0, parsed.width - canvas.width))
+  camera.y = clamp(player.spawnY - canvas.height / 2, 0, Math.max(0, parsed.height - canvas.height))
 
-  if (statusState.hold === 0) {
-    statusState.text = getDefaultStatus();
-  }
-
-  refreshHud();
+  setStatus(config.objective, 40)
+  refreshHud()
+  render()
 }
 
 function setOverlay(title, text, buttonText, visible) {
-  overlayTitleEl.textContent = title;
-  overlayTextEl.textContent = text;
-  overlayButtonEl.textContent = buttonText;
-  overlayEl.classList.toggle("hidden", !visible);
+  overlayTitleEl.textContent = title
+  overlayTextEl.textContent = text
+  overlayButtonEl.textContent = buttonText
+  overlayEl.classList.toggle("hidden", !visible)
 }
 
-function startGame() {
-  const wasRunning = gameRunning;
-  resetGame(false);
-  gameRunning = true;
-  lastTime = performance.now();
-  if (!wasRunning) {
-    requestAnimationFrame(loop);
+function setStatus(text, hold = 0) {
+  state.status.text = text
+  state.status.hold = hold
+}
+
+function getDefaultStatus() {
+  if (state.boss && state.boss.health > 0) {
+    return state.boss.phase === 2 ? "Boss phase 2 - ne dan va phan don" : "Danh bai Guardian Core"
+  }
+
+  if (state.totalCrystals > 0 && player.crystals < state.totalCrystals) {
+    return `Tim them ${state.totalCrystals - player.crystals} tinh the`
+  }
+
+  if (state.currentLevel.exit) {
+    return "Cong sang da mo - tien ve dich"
+  }
+
+  return state.currentLevel.config.objective
+}
+
+function tickStatus(delta) {
+  if (state.status.hold > 0) {
+    state.status.hold = Math.max(0, state.status.hold - delta)
+  }
+
+  if (state.status.hold === 0) {
+    state.status.text = getDefaultStatus()
   }
 }
 
-function endGame(won) {
-  gameRunning = false;
-  player.finishedTime = player.runTime;
+function refreshHud() {
+  levelValueEl.textContent = `${state.currentLevelIndex + 1} / ${LEVELS.length}`
+  crystalCountEl.textContent = state.totalCrystals > 0 ? `${player.crystals} / ${state.totalCrystals}` : "Boss"
+
+  healthFillEl.style.width = `${(player.health / player.maxHealth) * 100}%`
+  spiritFillEl.style.width = `${(player.spirit / player.maxSpirit) * 100}%`
+  healthTextEl.textContent = `${Math.ceil(player.health)} / ${player.maxHealth}`
+  spiritTextEl.textContent = `${Math.floor(player.spirit)} / ${player.maxSpirit}`
+
+  if (player.dashTimer > 0) {
+    dashValueEl.textContent = "Dang luot"
+  } else if (!player.canDash && player.dashCooldown <= 0) {
+    dashValueEl.textContent = "Cham dat"
+  } else if (player.dashCooldown > 0) {
+    dashValueEl.textContent = `Hoi ${Math.max(1, Math.ceil(player.dashCooldown / 12))}`
+  } else {
+    dashValueEl.textContent = "San sang"
+  }
+
+  const shownTime = state.gameRunning ? player.runTime : player.finishedTime || player.runTime
+  timeValueEl.textContent = formatTime(shownTime)
+  statusTextEl.textContent = state.status.text
+  stageChipEl.textContent = state.currentLevel.config.name
+
+  if (state.boss && state.boss.health > 0) {
+    bossBarEl.classList.remove("hidden")
+    bossNameEl.textContent = state.boss.name
+    bossTextEl.textContent = `${Math.ceil(state.boss.health)} / ${state.boss.maxHealth}`
+    bossFillEl.style.width = `${(state.boss.health / state.boss.maxHealth) * 100}%`
+  } else {
+    bossBarEl.classList.add("hidden")
+  }
+}
+
+function ensureAudio() {
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext
+  if (!AudioContextClass) {
+    return
+  }
+
+  if (!audioState.unlocked) {
+    audioState.ctx = new AudioContextClass()
+    audioState.master = audioState.ctx.createGain()
+    audioState.master.gain.value = 0.07
+    audioState.master.connect(audioState.ctx.destination)
+    audioState.unlocked = true
+  }
+
+  if (audioState.ctx.state === "suspended") {
+    audioState.ctx.resume()
+  }
+}
+
+function playTone(frequency, duration, options = {}) {
+  if (!audioState.unlocked) {
+    return
+  }
+
+  const ctxAudio = audioState.ctx
+  const now = ctxAudio.currentTime + (options.delay || 0)
+  const oscillator = ctxAudio.createOscillator()
+  const gainNode = ctxAudio.createGain()
+  const startFrequency = Math.max(40, frequency)
+  const endFrequency = Math.max(40, options.slideTo || frequency)
+
+  oscillator.type = options.type || "square"
+  oscillator.frequency.setValueAtTime(startFrequency, now)
+  oscillator.frequency.exponentialRampToValueAtTime(endFrequency, now + duration)
+
+  gainNode.gain.setValueAtTime(0.0001, now)
+  gainNode.gain.exponentialRampToValueAtTime(options.volume || 0.04, now + 0.01)
+  gainNode.gain.exponentialRampToValueAtTime(0.0001, now + duration)
+
+  oscillator.connect(gainNode)
+  gainNode.connect(audioState.master)
+  oscillator.start(now)
+  oscillator.stop(now + duration + 0.02)
+}
+
+function playJumpSound() {
+  playTone(260, 0.08, { slideTo: 420, volume: 0.04, type: "square" })
+}
+
+function playDoubleJumpSound() {
+  playTone(380, 0.1, { slideTo: 660, volume: 0.05, type: "triangle" })
+}
+
+function playDashSound() {
+  playTone(220, 0.12, { slideTo: 90, volume: 0.05, type: "sawtooth" })
+}
+
+function playSlashSound() {
+  playTone(760, 0.06, { slideTo: 180, volume: 0.045, type: "triangle" })
+}
+
+function playBlastSound() {
+  playTone(480, 0.12, { slideTo: 820, volume: 0.05, type: "square" })
+  playTone(260, 0.08, { slideTo: 430, volume: 0.03, type: "triangle", delay: 0.02 })
+}
+
+function playCollectSound() {
+  playTone(900, 0.08, { slideTo: 1220, volume: 0.04, type: "triangle" })
+}
+
+function playHealSound() {
+  playTone(360, 0.1, { slideTo: 520, volume: 0.035, type: "sine" })
+}
+
+function playHitSound() {
+  playTone(180, 0.12, { slideTo: 70, volume: 0.05, type: "square" })
+}
+
+function playEnemyDownSound() {
+  playTone(160, 0.16, { slideTo: 60, volume: 0.05, type: "sawtooth" })
+}
+
+function playBossSound() {
+  playTone(120, 0.18, { slideTo: 70, volume: 0.06, type: "sawtooth" })
+}
+
+function playWinSound() {
+  playTone(523, 0.12, { volume: 0.04, type: "triangle" })
+  playTone(659, 0.12, { volume: 0.04, type: "triangle", delay: 0.12 })
+  playTone(784, 0.18, { volume: 0.05, type: "triangle", delay: 0.24 })
+}
+
+function playLoseSound() {
+  playTone(260, 0.14, { slideTo: 180, volume: 0.05, type: "square" })
+  playTone(180, 0.18, { slideTo: 90, volume: 0.05, type: "square", delay: 0.12 })
+}
+
+function startCampaign() {
+  const wasRunning = state.gameRunning
+  loadLevel(0, true)
+  state.overlayMode = "playing"
+  state.nextLevelIndex = null
+  setOverlay("", "", "", false)
+  setStatus("Bat dau hanh trinh", 55)
+  state.gameRunning = true
+  state.lastTime = performance.now()
+  if (!wasRunning) {
+    requestAnimationFrame(loop)
+  }
+}
+
+function startNextLevel() {
+  const wasRunning = state.gameRunning
+  loadLevel(state.nextLevelIndex, false)
+  state.overlayMode = "playing"
+  state.nextLevelIndex = null
+  setOverlay("", "", "", false)
+  setStatus("Tien vao man moi", 55)
+  state.gameRunning = true
+  state.lastTime = performance.now()
+  if (!wasRunning) {
+    requestAnimationFrame(loop)
+  }
+}
+
+function finishRun(won) {
+  state.gameRunning = false
+  player.finishedTime = player.runTime
+  state.overlayMode = "restart"
 
   if (won) {
-    setStatus("Thoát thành công khỏi tàn tích");
+    playWinSound()
+    setStatus("Guardian Core da sup do")
     setOverlay(
-      "Bạn đã vượt qua Pixel Relic Run",
-      `Thời gian hoàn thành: ${formatTime(player.finishedTime)}. Nhấn để lao vào thêm một lượt nữa.`,
-      "Chơi lại",
+      "Ban da hoan thanh Pixel Relic Saga",
+      `Ba man da duoc vuot qua trong ${formatTime(player.finishedTime)}. Nhan de bat dau mot chuyen di moi.`,
+      "Choi lai tu dau",
       true
-    );
+    )
   } else {
-    setStatus("Linh lực đã cạn");
+    playLoseSound()
+    setStatus("Noi luc da can")
     setOverlay(
-      "Bạn đã gục ngã",
-      `Bạn gom được ${player.crystals}/${totalCrystals} tinh thể trong ${formatTime(player.finishedTime)}. Nhấn để thử lại.`,
-      "Thử lại",
+      "Ban da that bai",
+      `Ban dung lai o ${LEVELS[state.currentLevelIndex].name} sau ${formatTime(player.finishedTime)}. Nhan de thu lai.`,
+      "Thu lai",
       true
-    );
+    )
   }
 
-  refreshHud();
+  refreshHud()
+  render()
+}
+
+function completeLevel() {
+  state.gameRunning = false
+  state.overlayMode = "next"
+  state.nextLevelIndex = state.currentLevelIndex + 1
+
+  setOverlay(
+    `Hoan thanh ${LEVELS[state.currentLevelIndex].name}`,
+    `Nhan de tien vao ${LEVELS[state.nextLevelIndex].name}. Thoi gian hien tai la ${formatTime(player.runTime)}.`,
+    "Sang man tiep",
+    true
+  )
+}
+
+function handleOverlayAction() {
+  ensureAudio()
+
+  if (state.overlayMode === "next") {
+    startNextLevel()
+  } else {
+    startCampaign()
+  }
 }
 
 function loop(timestamp) {
-  if (!gameRunning) {
-    render();
-    return;
+  if (!state.gameRunning) {
+    render()
+    return
   }
 
-  const delta = Math.min((timestamp - lastTime) / 16.6667, 1.8);
-  lastTime = timestamp;
+  const delta = Math.min((timestamp - state.lastTime) / 16.6667, 1.8)
+  state.lastTime = timestamp
 
-  update(delta);
-  render();
+  update(delta)
+  render()
 
-  if (gameRunning) {
-    requestAnimationFrame(loop);
+  if (state.gameRunning) {
+    requestAnimationFrame(loop)
   }
 }
 
 function update(delta) {
-  player.runTime += delta / 60;
-  levelState.exit.pulse += 0.08 * delta;
+  player.runTime += delta / 60
 
+  updateTimers(delta)
+  updateGuarding(delta)
+  handleMovement(delta)
+  processJump()
+  applyPlayerPhysics(delta)
+  updateEnemies(delta)
+  updateBoss(delta)
+  updateMeleeBursts(delta)
+
+  if (!state.gameRunning) {
+    refreshHud()
+    return
+  }
+
+  updateProjectiles(delta)
+
+  if (!state.gameRunning) {
+    refreshHud()
+    return
+  }
+
+  animateLevel(delta)
+  handleBeacons()
+  handleJumpPads()
+  collectCrystals()
+
+  if (!state.gameRunning) {
+    refreshHud()
+    return
+  }
+
+  handleHazards()
+
+  if (!state.gameRunning) {
+    refreshHud()
+    return
+  }
+
+  if (player.y > state.currentLevel.height + TILE * 3 && player.hurtTimer <= 0) {
+    damagePlayer(22, player.facing * -1 || -1, true)
+  }
+
+  if (!state.gameRunning) {
+    refreshHud()
+    return
+  }
+
+  checkObjective()
+
+  if (!state.gameRunning) {
+    refreshHud()
+    return
+  }
+
+  updateCamera(delta)
+  updateParticles(delta)
+  tickStatus(delta)
+  refreshHud()
+}
+
+function updateTimers(delta) {
   if (player.hurtTimer > 0) {
-    player.hurtTimer = Math.max(0, player.hurtTimer - delta);
+    player.hurtTimer = Math.max(0, player.hurtTimer - delta)
   }
 
   if (player.jumpBuffer > 0) {
-    player.jumpBuffer = Math.max(0, player.jumpBuffer - delta);
+    player.jumpBuffer = Math.max(0, player.jumpBuffer - delta)
   }
 
   if (player.dashCooldown > 0) {
-    player.dashCooldown = Math.max(0, player.dashCooldown - delta);
+    player.dashCooldown = Math.max(0, player.dashCooldown - delta)
   }
 
   if (player.dashTimer > 0) {
-    player.dashTimer = Math.max(0, player.dashTimer - delta);
-    player.velocityX = DASH_SPEED * player.facing;
-    spawnTrailParticle();
+    player.dashTimer = Math.max(0, player.dashTimer - delta)
+    player.velocityX = DASH_SPEED * player.facing
+    player.velocityY = 0
+    spawnTrailParticle()
   }
 
-  if (screenShake > 0) {
-    screenShake = Math.max(0, screenShake - 0.32 * delta);
+  if (player.attackCooldown > 0) {
+    player.attackCooldown = Math.max(0, player.attackCooldown - delta)
   }
 
-  handleInput(delta);
-  processJump();
-  applyPhysics(delta);
-  updateEnemies(delta);
-  updateParticles(delta);
-  animateLevel(delta);
-  handleBeacons();
-  handleJumpPads();
-  collectCrystals();
-  handleHazards();
-
-  if (!gameRunning) {
-    return;
+  if (player.attackPoseTimer > 0) {
+    player.attackPoseTimer = Math.max(0, player.attackPoseTimer - delta)
   }
 
-  if (player.y > world.height + TILE * 2 && player.hurtTimer <= 0) {
-    damagePlayer(player.x < levelState.exit.x ? -1 : 1, true);
+  if (player.blastCooldown > 0) {
+    player.blastCooldown = Math.max(0, player.blastCooldown - delta)
   }
 
-  if (!gameRunning) {
-    return;
+  player.spirit = clamp(player.spirit + 0.025 * delta, 0, player.maxSpirit)
+  state.screenShake = Math.max(0, state.screenShake - 0.3 * delta)
+
+  if (state.currentLevel.exit) {
+    state.currentLevel.exit.pulse += 0.08 * delta
   }
 
-  updateCamera(delta);
-
-  if (player.crystals === totalCrystals && intersects(player, levelState.exit)) {
-    endGame(true);
+  if (state.boss) {
+    state.boss.flashTimer = Math.max(0, state.boss.flashTimer - delta)
   }
-
-  if (!gameRunning) {
-    return;
-  }
-
-  tickStatus(delta);
 }
 
-function handleInput(delta) {
-  if (player.dashTimer > 0) {
-    return;
+function updateGuarding(delta) {
+  player.isGuarding =
+    input.guard &&
+    player.grounded &&
+    player.dashTimer <= 0 &&
+    player.hurtTimer <= 0
+
+  if (!player.isGuarding) {
+    player.guardSoundTimer = 0
+    return
   }
 
-  if (keys.left) {
-    player.velocityX -= PLAYER_ACCEL * delta;
-    player.facing = -1;
+  player.velocityX *= Math.pow(0.55, delta)
+  setStatus("Dang gong de hoi mau", 2)
+
+  if (player.health >= player.maxHealth || player.spirit <= 0) {
+    return
   }
 
-  if (keys.right) {
-    player.velocityX += PLAYER_ACCEL * delta;
-    player.facing = 1;
+  player.health = clamp(player.health + GUARD_HEAL_RATE * delta, 0, player.maxHealth)
+  player.spirit = clamp(player.spirit - GUARD_SPIRIT_RATE * delta, 0, player.maxSpirit)
+  player.guardSoundTimer = Math.max(0, player.guardSoundTimer - delta)
+
+  if (player.guardSoundTimer === 0) {
+    playHealSound()
+    player.guardSoundTimer = 20
+  }
+}
+
+function handleMovement(delta) {
+  if (player.dashTimer > 0 || player.isGuarding) {
+    return
   }
 
-  if (!keys.left && !keys.right) {
-    player.velocityX *= Math.pow(FRICTION, delta);
+  if (input.left) {
+    player.velocityX -= PLAYER_ACCEL * delta
+    player.facing = -1
   }
 
-  player.velocityX = clamp(player.velocityX, -PLAYER_MAX_SPEED, PLAYER_MAX_SPEED);
+  if (input.right) {
+    player.velocityX += PLAYER_ACCEL * delta
+    player.facing = 1
+  }
+
+  if (!input.left && !input.right) {
+    player.velocityX *= Math.pow(FRICTION, delta)
+  }
+
+  player.velocityX = clamp(player.velocityX, -PLAYER_MAX_SPEED, PLAYER_MAX_SPEED)
 }
 
 function processJump() {
-  if (!gameRunning || player.jumpBuffer <= 0) {
-    return;
+  if (!state.gameRunning || player.jumpBuffer <= 0 || player.isGuarding) {
+    return
   }
 
-  const canGroundJump = player.grounded || player.coyoteTimer > 0;
+  const canGroundJump = player.grounded || player.coyoteTimer > 0
+
   if (canGroundJump) {
-    player.velocityY = JUMP_FORCE;
-    player.grounded = false;
-    player.coyoteTimer = 0;
-    player.jumpBuffer = 0;
-    spawnParticles(player.x + player.width / 2, player.y + player.height, 5, ["#d9c8a0", "#ffffff"], 1.2, 0.06);
-    return;
+    player.velocityY = JUMP_FORCE
+    player.grounded = false
+    player.coyoteTimer = 0
+    player.jumpBuffer = 0
+    spawnParticles(player.x + player.width / 2, player.y + player.height, 6, ["#d9c8a0", "#ffffff"], 1.2, 0.06)
+    playJumpSound()
+    return
   }
 
   if (player.airJumps > 0) {
-    player.airJumps -= 1;
-    player.velocityY = DOUBLE_JUMP_FORCE;
-    player.jumpBuffer = 0;
-    player.canDash = true;
-    screenShake = 1.2;
-    spawnParticles(player.x + player.width / 2, player.y + player.height / 2, 10, ["#85f7ff", "#ffffff"], 1.6, 0.02);
-    setStatus("Nhảy đôi kích hoạt", 28);
+    player.airJumps -= 1
+    player.velocityY = DOUBLE_JUMP_FORCE
+    player.jumpBuffer = 0
+    player.canDash = true
+    state.screenShake = 1.1
+    spawnParticles(player.x + player.width / 2, player.y + player.height / 2, 12, ["#85f7ff", "#ffffff"], 1.6, 0.02)
+    setStatus("Nhay doi kich hoat", 26)
+    playDoubleJumpSound()
   }
 }
 
-function applyPhysics(delta) {
+function applyPlayerPhysics(delta) {
   if (player.dashTimer <= 0) {
-    player.velocityY = Math.min(player.velocityY + GRAVITY * delta, MAX_FALL_SPEED);
-  } else {
-    player.velocityY = 0;
+    player.velocityY = Math.min(player.velocityY + GRAVITY * delta, MAX_FALL_SPEED)
   }
 
-  movePlayerAxis("x", player.velocityX * delta);
-  movePlayerAxis("y", player.velocityY * delta);
+  movePlayerAxis("x", player.velocityX * delta)
+  movePlayerAxis("y", player.velocityY * delta)
 
   if (!player.grounded) {
-    player.coyoteTimer = Math.max(0, player.coyoteTimer - delta);
+    player.coyoteTimer = Math.max(0, player.coyoteTimer - delta)
   }
 }
 
 function movePlayerAxis(axis, amount) {
   if (axis === "x") {
-    player.x += amount;
-    const collisions = getSolidCollisions(player);
+    player.x += amount
+    const collisions = getSolidCollisions(player)
+
     collisions.forEach((tile) => {
       if (amount > 0) {
-        player.x = tile.x - player.width;
+        player.x = tile.x - player.width
       } else if (amount < 0) {
-        player.x = tile.x + tile.width;
+        player.x = tile.x + tile.width
       }
-      player.velocityX = 0;
-      player.dashTimer = 0;
-    });
+      player.velocityX = 0
+      player.dashTimer = 0
+    })
 
-    player.x = clamp(player.x, 0, world.width - player.width);
-    return;
+    player.x = clamp(player.x, 0, Math.max(0, state.currentLevel.width - player.width))
+    return
   }
 
-  const wasGrounded = player.grounded;
-  player.y += amount;
-  player.grounded = false;
+  const wasGrounded = player.grounded
+  player.y += amount
+  player.grounded = false
+  const collisions = getSolidCollisions(player)
 
-  const collisions = getSolidCollisions(player);
   collisions.forEach((tile) => {
     if (amount > 0) {
-      player.y = tile.y - player.height;
-      player.velocityY = 0;
-      player.grounded = true;
-      player.airJumps = 1;
-      player.canDash = true;
-      player.coyoteTimer = COYOTE_FRAMES;
-      player.dashTimer = 0;
+      player.y = tile.y - player.height
+      player.velocityY = 0
+      player.grounded = true
+      player.airJumps = 1
+      player.canDash = true
+      player.coyoteTimer = COYOTE_FRAMES
+      player.dashTimer = 0
     } else if (amount < 0) {
-      player.y = tile.y + tile.height;
-      player.velocityY = 0;
+      player.y = tile.y + tile.height
+      player.velocityY = 0
     }
-  });
+  })
 
   if (!wasGrounded && player.grounded) {
-    spawnParticles(player.x + player.width / 2, player.y + player.height, 6, ["#d9c8a0", "#ffffff"], 1.1, 0.05);
+    spawnParticles(player.x + player.width / 2, player.y + player.height, 6, ["#d9c8a0", "#ffffff"], 1.1, 0.05)
   }
 }
 
+function getSolidCollisions(rect) {
+  return state.currentLevel.solids.filter((tile) => intersects(rect, tile))
+}
+
 function updateEnemies(delta) {
-  levelState.enemies.forEach((enemy) => {
-    if (enemy.defeated) {
-      return;
+  state.currentLevel.enemies.forEach((enemy) => {
+    if (enemy.dead) {
+      return
     }
 
-    enemy.x += enemy.velocityX * delta;
+    enemy.x += enemy.velocityX * delta
 
     if (enemy.x <= enemy.leftBound || enemy.x >= enemy.rightBound) {
-      enemy.velocityX *= -1;
+      enemy.velocityX *= -1
     }
 
     const ledgeProbe = {
@@ -565,432 +952,707 @@ function updateEnemies(delta) {
       y: enemy.y + enemy.height + 2,
       width: 1,
       height: 1
-    };
-
-    const hasGroundAhead = levelState.solids.some((tile) => intersects(ledgeProbe, tile));
-    if (!hasGroundAhead) {
-      enemy.velocityX *= -1;
     }
-  });
+
+    const hasGroundAhead = state.currentLevel.solids.some((tile) => intersects(ledgeProbe, tile))
+    if (!hasGroundAhead) {
+      enemy.velocityX *= -1
+    }
+  })
+}
+
+function chooseBossAttack() {
+  const boss = state.boss
+  const cycle = boss.phase === 1 ? ["volley", "jump", "charge"] : ["charge", "volley", "jump", "volley"]
+  boss.attackIndex = (boss.attackIndex + 1) % cycle.length
+  const attack = cycle[boss.attackIndex]
+  boss.facing = player.x + player.width / 2 < boss.x + boss.width / 2 ? -1 : 1
+
+  if (attack === "volley") {
+    boss.attackMode = "volley"
+    boss.modeTimer = boss.phase === 1 ? 56 : 64
+    boss.shotTimer = 4
+    boss.shotsRemaining = boss.phase === 1 ? 3 : 4
+    boss.velocityX = 0
+  } else if (attack === "jump") {
+    boss.attackMode = "jump"
+    boss.hasLaunched = true
+    boss.velocityY = boss.phase === 1 ? -6.2 : -7.1
+    boss.velocityX = boss.facing * (boss.phase === 1 ? 1.35 : 1.8)
+  } else {
+    boss.attackMode = "windup"
+    boss.modeTimer = boss.phase === 1 ? 18 : 14
+    boss.velocityX = 0
+  }
+
+  playBossSound()
+  setStatus("Boss dang ra don", 24)
+}
+
+function updateBoss(delta) {
+  const boss = state.boss
+  if (!boss || boss.health <= 0) {
+    return
+  }
+
+  boss.phase = boss.health <= boss.maxHealth * 0.5 ? 2 : 1
+  boss.hitWall = false
+
+  if (boss.attackMode === "idle") {
+    boss.facing = player.x + player.width / 2 < boss.x + boss.width / 2 ? -1 : 1
+    boss.velocityX = 0.45 * boss.facing * (boss.phase === 2 ? 1.2 : 1)
+    boss.attackCooldown = Math.max(0, boss.attackCooldown - delta)
+
+    if (boss.attackCooldown === 0 && boss.grounded) {
+      chooseBossAttack()
+    }
+  } else if (boss.attackMode === "volley") {
+    boss.modeTimer = Math.max(0, boss.modeTimer - delta)
+    boss.shotTimer = Math.max(0, boss.shotTimer - delta)
+    boss.velocityX *= Math.pow(0.84, delta)
+
+    if (boss.shotsRemaining > 0 && boss.shotTimer === 0) {
+      fireBossOrb()
+      boss.shotsRemaining -= 1
+      boss.shotTimer = boss.phase === 1 ? 14 : 10
+    }
+
+    if (boss.modeTimer === 0 && boss.shotsRemaining === 0) {
+      boss.attackMode = "idle"
+      boss.attackCooldown = boss.phase === 1 ? 60 : 42
+    }
+  } else if (boss.attackMode === "windup") {
+    boss.modeTimer = Math.max(0, boss.modeTimer - delta)
+    boss.velocityX *= Math.pow(0.6, delta)
+
+    if (boss.modeTimer === 0) {
+      boss.attackMode = "charge"
+      boss.modeTimer = boss.phase === 1 ? 24 : 30
+      boss.velocityX = boss.facing * (boss.phase === 1 ? 3.3 : 4.1)
+    }
+  } else if (boss.attackMode === "charge") {
+    boss.modeTimer = Math.max(0, boss.modeTimer - delta)
+
+    if (boss.modeTimer === 0) {
+      boss.attackMode = "idle"
+      boss.attackCooldown = boss.phase === 1 ? 58 : 40
+      boss.velocityX = 0
+    }
+  }
+
+  boss.velocityY = Math.min(boss.velocityY + GRAVITY * 0.86 * delta, MAX_FALL_SPEED)
+  const wasGrounded = boss.grounded
+
+  moveBossAxis("x", boss.velocityX * delta)
+  moveBossAxis("y", boss.velocityY * delta)
+
+  if (boss.attackMode === "jump" && !wasGrounded && boss.grounded && boss.hasLaunched) {
+    boss.attackMode = "idle"
+    boss.attackCooldown = boss.phase === 1 ? 60 : 42
+    boss.hasLaunched = false
+    fireShockwaves(boss.x + boss.width / 2, boss.y + boss.height - 6, boss.phase === 2)
+    state.screenShake = 2.2
+    spawnParticles(boss.x + boss.width / 2, boss.y + boss.height - 6, 22, ["#f2779d", "#ffffff", "#f8d26b"], 2.1, 0.05)
+    playBossSound()
+  }
+
+  if (boss.attackMode === "charge" && boss.hitWall) {
+    boss.attackMode = "idle"
+    boss.attackCooldown = boss.phase === 1 ? 62 : 44
+    boss.velocityX = 0
+    fireShockwaves(boss.x + boss.width / 2, boss.y + boss.height - 6, false)
+    spawnParticles(boss.x + boss.width / 2, boss.y + boss.height / 2, 18, ["#f2779d", "#ffffff"], 1.8, 0.03)
+    state.screenShake = 1.7
+  }
+}
+
+function moveBossAxis(axis, amount) {
+  const boss = state.boss
+  if (!boss) {
+    return
+  }
+
+  if (axis === "x") {
+    boss.x += amount
+    const collisions = getSolidCollisions(boss)
+
+    collisions.forEach((tile) => {
+      if (amount > 0) {
+        boss.x = tile.x - boss.width
+      } else if (amount < 0) {
+        boss.x = tile.x + tile.width
+      }
+      boss.velocityX = 0
+      boss.hitWall = true
+    })
+
+    if (boss.x <= 0) {
+      boss.x = 0
+      boss.velocityX = 0
+      boss.hitWall = true
+    }
+
+    const maxX = Math.max(0, state.currentLevel.width - boss.width)
+    if (boss.x >= maxX) {
+      boss.x = maxX
+      boss.velocityX = 0
+      boss.hitWall = true
+    }
+
+    return
+  }
+
+  boss.y += amount
+  boss.grounded = false
+  const collisions = getSolidCollisions(boss)
+
+  collisions.forEach((tile) => {
+    if (amount > 0) {
+      boss.y = tile.y - boss.height
+      boss.velocityY = 0
+      boss.grounded = true
+    } else if (amount < 0) {
+      boss.y = tile.y + tile.height
+      boss.velocityY = 0
+    }
+  })
+}
+
+function fireBossOrb() {
+  const boss = state.boss
+  const speed = boss.phase === 1 ? 2.3 : 2.8
+  const spread = boss.phase === 1 ? [0] : [-0.22, 0, 0.22]
+  const startX = boss.x + boss.width / 2
+  const startY = boss.y + 10
+  const targetX = player.x + player.width / 2
+  const targetY = player.y + player.height / 2
+  const baseAngle = Math.atan2(targetY - startY, targetX - startX)
+
+  spread.forEach((offset) => {
+    const angle = baseAngle + offset
+    projectiles.push({
+      id: makeId(),
+      owner: "enemy",
+      kind: "orb",
+      x: startX,
+      y: startY,
+      width: 6,
+      height: 6,
+      velocityX: Math.cos(angle) * speed,
+      velocityY: Math.sin(angle) * speed,
+      damage: boss.phase === 1 ? 12 : 14,
+      life: 110
+    })
+  })
+
+  playBossSound()
+}
+
+function fireShockwaves(x, y, empowered) {
+  const speed = empowered ? 3.1 : 2.4
+  const damage = empowered ? 18 : 15
+
+  projectiles.push({
+    id: makeId(),
+    owner: "enemy",
+    kind: "shockwave",
+    x: x - 6,
+    y,
+    width: 12,
+    height: 6,
+    velocityX: -speed,
+    velocityY: 0,
+    damage,
+    life: 95
+  })
+
+  projectiles.push({
+    id: makeId(),
+    owner: "enemy",
+    kind: "shockwave",
+    x: x - 6,
+    y,
+    width: 12,
+    height: 6,
+    velocityX: speed,
+    velocityY: 0,
+    damage,
+    life: 95
+  })
+}
+
+function updateMeleeBursts(delta) {
+  for (let index = meleeBursts.length - 1; index >= 0; index -= 1) {
+    const burst = meleeBursts[index]
+    burst.life -= delta
+
+    if (burst.life <= 0) {
+      meleeBursts.splice(index, 1)
+      continue
+    }
+
+    const rect = {
+      x: burst.x,
+      y: burst.y,
+      width: burst.width,
+      height: burst.height
+    }
+
+    state.currentLevel.enemies.forEach((enemy) => {
+      if (enemy.dead || burst.hitIds.has(enemy.id)) {
+        return
+      }
+
+      if (intersects(rect, enemy)) {
+        burst.hitIds.add(enemy.id)
+        damageEnemy(enemy, burst.damage, burst.direction)
+      }
+    })
+
+    if (state.boss && state.boss.health > 0 && !burst.hitIds.has("boss") && intersects(rect, state.boss)) {
+      burst.hitIds.add("boss")
+      damageBoss(burst.damage, burst.direction)
+    }
+
+    for (let projectileIndex = projectiles.length - 1; projectileIndex >= 0; projectileIndex -= 1) {
+      const projectile = projectiles[projectileIndex]
+      if (projectile.owner === "enemy" && projectile.kind === "orb" && intersects(rect, projectile)) {
+        projectiles.splice(projectileIndex, 1)
+        gainSpirit(4)
+        spawnParticles(projectile.x, projectile.y, 8, ["#ffffff", "#7af5ff"], 1.3, 0.01)
+      }
+    }
+  }
+}
+
+function updateProjectiles(delta) {
+  for (let index = projectiles.length - 1; index >= 0; index -= 1) {
+    const projectile = projectiles[index]
+    projectile.life -= delta
+
+    if (projectile.life <= 0) {
+      projectiles.splice(index, 1)
+      continue
+    }
+
+    projectile.x += projectile.velocityX * delta
+    projectile.y += projectile.velocityY * delta
+
+    if (projectile.owner === "player") {
+      if (projectileHitsSolid(projectile)) {
+        spawnParticles(projectile.x, projectile.y, 8, ["#7af5ff", "#ffffff"], 1.1, 0.01)
+        projectiles.splice(index, 1)
+        continue
+      }
+
+      let hitTarget = false
+
+      for (let enemyIndex = 0; enemyIndex < state.currentLevel.enemies.length; enemyIndex += 1) {
+        const enemy = state.currentLevel.enemies[enemyIndex]
+        if (!enemy.dead && intersects(projectile, enemy)) {
+          damageEnemy(enemy, projectile.damage, Math.sign(projectile.velocityX) || player.facing)
+          hitTarget = true
+          break
+        }
+      }
+
+      if (!hitTarget && state.boss && state.boss.health > 0 && intersects(projectile, state.boss)) {
+        damageBoss(projectile.damage, Math.sign(projectile.velocityX) || player.facing)
+        hitTarget = true
+      }
+
+      if (hitTarget) {
+        spawnParticles(projectile.x, projectile.y, 10, ["#7af5ff", "#ffffff"], 1.4, 0.01)
+        projectiles.splice(index, 1)
+        continue
+      }
+    } else {
+      if (projectile.kind !== "shockwave" && projectileHitsSolid(projectile)) {
+        spawnParticles(projectile.x, projectile.y, 8, ["#f2779d", "#ffffff"], 1.2, 0.02)
+        projectiles.splice(index, 1)
+        continue
+      }
+
+      if (player.hurtTimer <= 0 && intersects(projectile, player)) {
+        damagePlayer(projectile.damage, projectile.velocityX >= 0 ? 1 : -1, false)
+        projectiles.splice(index, 1)
+        continue
+      }
+    }
+
+    if (
+      projectile.x < -40 ||
+      projectile.x > state.currentLevel.width + 40 ||
+      projectile.y < -40 ||
+      projectile.y > state.currentLevel.height + 40
+    ) {
+      projectiles.splice(index, 1)
+    }
+  }
+}
+
+function projectileHitsSolid(projectile) {
+  if (projectile.kind === "shockwave") {
+    return false
+  }
+
+  return state.currentLevel.solids.some((tile) => intersects(projectile, tile))
 }
 
 function animateLevel(delta) {
-  levelState.beacons.forEach((beacon) => {
-    beacon.glow += 0.08 * delta;
-  });
+  state.currentLevel.beacons.forEach((beacon) => {
+    beacon.glow += 0.08 * delta
+  })
 
-  levelState.jumpPads.forEach((pad) => {
-    pad.bounce = Math.max(0, pad.bounce - 0.12 * delta);
-  });
+  state.currentLevel.jumpPads.forEach((pad) => {
+    pad.bounce = Math.max(0, pad.bounce - 0.12 * delta)
+  })
 }
 
 function handleBeacons() {
-  levelState.beacons.forEach((beacon) => {
+  state.currentLevel.beacons.forEach((beacon) => {
     if (beacon.active || !intersects(player, beacon)) {
-      return;
+      return
     }
 
-    levelState.beacons.forEach((entry) => {
-      entry.active = false;
-    });
+    state.currentLevel.beacons.forEach((entry) => {
+      entry.active = false
+    })
 
-    beacon.active = true;
-    player.spawnX = beacon.x + 1;
-    player.spawnY = beacon.y + beacon.height - player.height;
-    screenShake = 1.6;
-    spawnParticles(beacon.x + beacon.width / 2, beacon.y + 4, 16, ["#f8d26b", "#ffffff", "#e57c46"], 1.8, 0.01);
-    setStatus("Đã lưu checkpoint mới", 60);
-  });
+    beacon.active = true
+    player.spawnX = beacon.x + 1
+    player.spawnY = beacon.y + beacon.height - player.height
+    state.screenShake = 1.4
+    spawnParticles(beacon.x + beacon.width / 2, beacon.y + 4, 16, ["#f8d26b", "#ffffff", "#e57c46"], 1.8, 0.01)
+    setStatus("Checkpoint da duoc kich hoat", 55)
+    playCollectSound()
+  })
 }
 
 function handleJumpPads() {
-  levelState.jumpPads.forEach((pad) => {
+  state.currentLevel.jumpPads.forEach((pad) => {
     const touchesPad =
       player.velocityY > 0.35 &&
       player.x + player.width > pad.x &&
       player.x < pad.x + pad.width &&
       player.y + player.height >= pad.y &&
-      player.y + player.height <= pad.y + pad.height + 8;
+      player.y + player.height <= pad.y + pad.height + 8
 
     if (!touchesPad) {
-      return;
+      return
     }
 
-    player.y = pad.y - player.height;
-    player.velocityY = JUMP_PAD_FORCE;
-    player.grounded = false;
-    player.coyoteTimer = 0;
-    player.airJumps = 1;
-    player.canDash = true;
-    pad.bounce = 1;
-    screenShake = 1.8;
-    spawnParticles(pad.x + pad.width / 2, pad.y + 2, 12, ["#ffe59a", "#f0b454", "#ffffff"], 1.9, 0.01);
-    setStatus("Bệ nảy kích hoạt", 28);
-  });
+    player.y = pad.y - player.height
+    player.velocityY = JUMP_PAD_FORCE
+    player.grounded = false
+    player.coyoteTimer = 0
+    player.airJumps = 1
+    player.canDash = true
+    pad.bounce = 1
+    state.screenShake = 1.7
+    spawnParticles(pad.x + pad.width / 2, pad.y + 2, 12, ["#ffe59a", "#f0b454", "#ffffff"], 1.9, 0.01)
+    setStatus("Be nay day ban vut len", 26)
+    playJumpSound()
+  })
 }
 
 function collectCrystals() {
-  let collectedAny = false;
+  let collectedAny = false
 
-  levelState.crystals.forEach((crystal) => {
-    crystal.bob += 0.08;
+  state.currentLevel.crystals.forEach((crystal) => {
+    crystal.bob += 0.08
+
     if (!crystal.collected && intersects(player, crystal)) {
-      crystal.collected = true;
-      player.crystals += 1;
-      collectedAny = true;
-      screenShake = 1.4;
-      spawnParticles(crystal.x + crystal.width / 2, crystal.y + crystal.height / 2, 14, ["#85f7ff", "#d9ffff", "#ffffff"], 1.7, 0.01);
+      crystal.collected = true
+      player.crystals += 1
+      gainSpirit(14)
+      collectedAny = true
+      state.screenShake = 1.2
+      spawnParticles(crystal.x + crystal.width / 2, crystal.y + crystal.height / 2, 14, ["#85f7ff", "#d9ffff", "#ffffff"], 1.7, 0.01)
+      playCollectSound()
     }
-  });
+  })
 
   if (collectedAny) {
-    if (player.crystals === totalCrystals) {
-      setStatus("Cổng sáng đã được kích hoạt", 72);
+    if (player.crystals === state.totalCrystals) {
+      setStatus("Da du tinh the - cong sang mo ra", 70)
     } else {
-      setStatus("Đã lấy được tinh thể", 40);
+      setStatus("Tinh the moi da duoc thu thap", 36)
     }
   }
 }
 
 function handleHazards() {
   if (player.hurtTimer > 0) {
-    return;
+    return
   }
 
-  const touchedSpike = levelState.spikes.some((spike) => intersects(player, spike));
+  const touchedSpike = state.currentLevel.spikes.some((spike) => intersects(player, spike))
   if (touchedSpike) {
-    damagePlayer(player.facing * -1 || -1);
-    return;
+    damagePlayer(18, player.facing > 0 ? -1 : 1, false)
+    return
   }
 
-  const touchedEnemy = levelState.enemies.find((enemy) => !enemy.defeated && intersects(player, enemy));
-  if (!touchedEnemy) {
-    return;
+  const touchedEnemy = state.currentLevel.enemies.find((enemy) => !enemy.dead && intersects(player, enemy))
+  if (touchedEnemy) {
+    const stompedEnemy = player.velocityY > 0.7 && player.y + player.height <= touchedEnemy.y + 8
+
+    if (stompedEnemy) {
+      damageEnemy(touchedEnemy, 999, player.facing)
+      player.velocityY = -4.8
+      player.airJumps = 1
+      player.canDash = true
+      gainSpirit(8)
+      setStatus("Dap guc quai vat", 28)
+      return
+    }
+
+    damagePlayer(14, player.x < touchedEnemy.x ? -1 : 1, false)
+    return
   }
 
-  const stompedEnemy =
-    player.velocityY > 0.6 &&
-    player.y + player.height <= touchedEnemy.y + 8;
+  if (state.boss && state.boss.health > 0 && intersects(player, state.boss)) {
+    damagePlayer(20, player.x + player.width / 2 < state.boss.x + state.boss.width / 2 ? -1 : 1, false)
+  }
+}
 
-  if (stompedEnemy) {
-    touchedEnemy.defeated = true;
-    player.velocityY = -4.8;
-    player.airJumps = 1;
-    player.canDash = true;
-    screenShake = 1.8;
-    spawnParticles(touchedEnemy.x + touchedEnemy.width / 2, touchedEnemy.y + touchedEnemy.height / 2, 12, ["#ef9f8f", "#f8d26b", "#ffffff"], 1.8, 0.02);
-    setStatus("Dẫm trúng quái", 40);
-    return;
+function checkObjective() {
+  if (state.boss) {
+    return
   }
 
-  damagePlayer(player.x < touchedEnemy.x ? -1 : 1);
+  if (!state.currentLevel.exit) {
+    return
+  }
+
+  if (intersects(player, state.currentLevel.exit)) {
+    if (player.crystals >= state.totalCrystals) {
+      if (state.currentLevelIndex === LEVELS.length - 1) {
+        finishRun(true)
+      } else {
+        completeLevel()
+      }
+    } else {
+      setStatus("Can thu them tinh the truoc khi qua cong", 16)
+    }
+  }
 }
 
 function respawnPlayer() {
-  player.x = player.spawnX;
-  player.y = player.spawnY;
-  player.velocityX = 0;
-  player.velocityY = 0;
-  player.grounded = false;
-  player.coyoteTimer = 0;
-  player.jumpBuffer = 0;
-  player.airJumps = 1;
-  player.canDash = true;
-  player.dashTimer = 0;
-  camera.x = clamp(player.spawnX - canvas.width / 2 + player.width / 2, 0, world.width - canvas.width);
-  camera.y = clamp(player.spawnY - canvas.height / 2 + player.height / 2, 0, world.height - canvas.height);
-  spawnParticles(player.x + player.width / 2, player.y + player.height / 2, 14, ["#ffffff", "#f8d26b", "#e57c46"], 1.7, 0.03);
+  player.x = player.spawnX
+  player.y = player.spawnY
+  player.velocityX = 0
+  player.velocityY = 0
+  player.grounded = false
+  player.coyoteTimer = 0
+  player.jumpBuffer = 0
+  player.airJumps = 1
+  player.canDash = true
+  player.dashTimer = 0
+  player.attackPoseTimer = 0
+  player.isGuarding = false
+
+  for (let index = projectiles.length - 1; index >= 0; index -= 1) {
+    if (projectiles[index].owner === "enemy") {
+      projectiles.splice(index, 1)
+    }
+  }
+
+  camera.x = clamp(player.spawnX - canvas.width / 2, 0, Math.max(0, state.currentLevel.width - canvas.width))
+  camera.y = clamp(player.spawnY - canvas.height / 2, 0, Math.max(0, state.currentLevel.height - canvas.height))
+  spawnParticles(player.x + player.width / 2, player.y + player.height / 2, 14, ["#ffffff", "#f8d26b", "#e57c46"], 1.7, 0.03)
 }
 
-function damagePlayer(direction, shouldRespawn = false) {
-  player.health -= 1;
-  player.hurtTimer = 56;
-  player.velocityX = KNOCKBACK_FORCE * direction;
-  player.velocityY = -4.4;
-  player.dashTimer = 0;
-  player.dashCooldown = Math.max(player.dashCooldown, 24);
-  screenShake = 3.4;
-  spawnParticles(player.x + player.width / 2, player.y + player.height / 2, 16, ["#ef9f8f", "#ffffff", "#d26b3b"], 1.9, 0.04);
+function gainSpirit(amount) {
+  player.spirit = clamp(player.spirit + amount, 0, player.maxSpirit)
+}
+
+function damagePlayer(amount, direction, shouldRespawn) {
+  let finalDamage = amount
+
+  if (player.isGuarding) {
+    finalDamage *= 0.45
+    player.spirit = clamp(player.spirit - 8, 0, player.maxSpirit)
+  }
+
+  player.health = Math.max(0, player.health - finalDamage)
+  player.hurtTimer = 52
+  player.velocityX = 2.6 * direction
+  player.velocityY = -4.2
+  player.dashTimer = 0
+  player.dashCooldown = Math.max(player.dashCooldown, 24)
+  player.attackPoseTimer = 0
+  player.isGuarding = false
+  state.screenShake = 3
+  spawnParticles(player.x + player.width / 2, player.y + player.height / 2, 16, ["#ef9f8f", "#ffffff", "#d26b3b"], 1.9, 0.04)
+  playHitSound()
 
   if (player.health <= 0) {
-    endGame(false);
-    return;
+    finishRun(false)
+    return
   }
 
   if (shouldRespawn) {
-    respawnPlayer();
+    respawnPlayer()
   }
 
-  setStatus("Trúng đòn, cẩn thận", 55);
+  setStatus("Trung don - canh giu khoang cach", 46)
+}
+
+function damageEnemy(enemy, amount, direction) {
+  if (enemy.dead) {
+    return
+  }
+
+  enemy.health -= amount
+  enemy.velocityX = 1.1 * direction
+  spawnParticles(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, 10, ["#ef9f8f", "#f8d26b", "#ffffff"], 1.6, 0.02)
+  gainSpirit(8)
+
+  if (enemy.health <= 0) {
+    enemy.dead = true
+    state.screenShake = 1.3
+    gainSpirit(8)
+    playEnemyDownSound()
+  } else {
+    playSlashSound()
+  }
+}
+
+function damageBoss(amount, direction) {
+  const boss = state.boss
+  if (!boss || boss.health <= 0) {
+    return
+  }
+
+  boss.health = Math.max(0, boss.health - amount)
+  boss.flashTimer = 8
+  boss.velocityX += direction * 0.35
+  gainSpirit(10)
+  state.screenShake = 1.4
+  spawnParticles(boss.x + boss.width / 2, boss.y + boss.height / 2, 14, ["#f2779d", "#ffffff", "#f8d26b"], 1.8, 0.02)
+  playSlashSound()
+
+  if (boss.health === 0) {
+    spawnParticles(boss.x + boss.width / 2, boss.y + boss.height / 2, 32, ["#f2779d", "#ffffff", "#f8d26b"], 2.4, 0.04)
+    setStatus("Guardian Core da bi danh bai", 120)
+    finishRun(true)
+  }
+}
+
+function queueJump() {
+  if (!state.gameRunning) {
+    return
+  }
+
+  player.jumpBuffer = JUMP_BUFFER_FRAMES
 }
 
 function attemptDash() {
-  if (!gameRunning || player.hurtTimer > 0) {
-    return;
+  if (!state.gameRunning || player.hurtTimer > 0 || player.isGuarding) {
+    return
   }
 
   if (!player.canDash || player.dashCooldown > 0) {
-    return;
+    return
   }
 
-  const direction = keys.left ? -1 : keys.right ? 1 : player.facing;
-  player.facing = direction;
-  player.canDash = false;
-  player.dashTimer = DASH_DURATION;
-  player.dashCooldown = DASH_COOLDOWN;
-  player.velocityX = DASH_SPEED * direction;
-  player.velocityY = 0;
-  player.grounded = false;
-  player.coyoteTimer = 0;
-  screenShake = 2.4;
-  spawnParticles(player.x + player.width / 2, player.y + player.height / 2, 18, ["#ffe59a", "#f0b454", "#ffffff"], 2, 0.01);
-  setStatus("Lướt bứt tốc", 26);
+  const direction = input.left ? -1 : input.right ? 1 : player.facing
+  player.facing = direction
+  player.canDash = false
+  player.dashTimer = DASH_DURATION
+  player.dashCooldown = DASH_COOLDOWN
+  player.velocityX = DASH_SPEED * direction
+  player.velocityY = 0
+  player.grounded = false
+  player.coyoteTimer = 0
+  state.screenShake = 2.1
+  spawnParticles(player.x + player.width / 2, player.y + player.height / 2, 18, ["#ffe59a", "#f0b454", "#ffffff"], 2, 0.01)
+  setStatus("Dash kich hoat", 20)
+  playDashSound()
+}
+
+function performSlash() {
+  if (!state.gameRunning || player.attackCooldown > 0 || player.isGuarding) {
+    return
+  }
+
+  player.attackCooldown = 18
+  player.attackPoseTimer = 10
+  const width = 22
+  const height = 14
+  const x = player.facing > 0 ? player.x + player.width - 2 : player.x - width + 2
+
+  meleeBursts.push({
+    id: makeId(),
+    x,
+    y: player.y + 1,
+    width,
+    height,
+    damage: SLASH_DAMAGE,
+    direction: player.facing,
+    life: 8,
+    hitIds: new Set()
+  })
+
+  spawnParticles(player.x + (player.facing > 0 ? player.width : 0), player.y + 8, 8, ["#ffe59a", "#ffffff"], 1.3, 0.01)
+  setStatus("Chem mo duong", 18)
+  playSlashSound()
+}
+
+function castBlast() {
+  if (!state.gameRunning || player.blastCooldown > 0 || player.spirit < BLAST_COST || player.isGuarding) {
+    return
+  }
+
+  player.spirit -= BLAST_COST
+  player.blastCooldown = 28
+  player.attackPoseTimer = 8
+
+  projectiles.push({
+    id: makeId(),
+    owner: "player",
+    kind: "blast",
+    x: player.facing > 0 ? player.x + player.width : player.x - 6,
+    y: player.y + 6,
+    width: 6,
+    height: 4,
+    velocityX: player.facing * 4.9,
+    velocityY: 0,
+    damage: BLAST_DAMAGE,
+    life: 90
+  })
+
+  spawnParticles(player.x + player.width / 2, player.y + 7, 10, ["#7af5ff", "#ffffff"], 1.4, 0.01)
+  setStatus("Cau nang luong duoc phong ra", 18)
+  playBlastSound()
 }
 
 function updateCamera(delta) {
-  const targetX = clamp(player.x - canvas.width / 2 + player.width / 2, 0, world.width - canvas.width);
-  const targetY = clamp(player.y - canvas.height / 2 + player.height / 2, 0, world.height - canvas.height);
-  camera.x += (targetX - camera.x) * 0.08 * delta;
-  camera.y += (targetY - camera.y) * 0.06 * delta;
-}
+  const maxX = Math.max(0, state.currentLevel.width - canvas.width)
+  const maxY = Math.max(0, state.currentLevel.height - canvas.height)
+  const targetX = clamp(player.x - canvas.width / 2 + player.width / 2, 0, maxX)
+  const targetY = clamp(player.y - canvas.height / 2 + player.height / 2, 0, maxY)
 
-function updateParticles(delta) {
-  for (let index = particles.length - 1; index >= 0; index -= 1) {
-    const particle = particles[index];
-    particle.life -= delta;
-    particle.x += particle.velocityX * delta;
-    particle.y += particle.velocityY * delta;
-    particle.velocityY += particle.gravity * delta;
-
-    if (particle.life <= 0) {
-      particles.splice(index, 1);
-    }
-  }
-}
-
-function render() {
-  const shakeX = screenShake > 0 ? (Math.random() - 0.5) * screenShake : 0;
-  const shakeY = screenShake > 0 ? (Math.random() - 0.5) * screenShake : 0;
-
-  ctx.save();
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.translate(-camera.x + shakeX, -camera.y + shakeY);
-
-  drawSky();
-  drawParallax();
-  drawTiles();
-  drawJumpPads();
-  drawBeacons();
-  drawCrystals();
-  drawExit();
-  drawEnemies();
-  drawParticles();
-  drawPlayer();
-
-  ctx.restore();
-}
-
-function drawSky() {
-  ctx.fillStyle = "#87c8ff";
-  ctx.fillRect(camera.x, camera.y, canvas.width, canvas.height);
-
-  for (let index = 0; index < 5; index += 1) {
-    const cloudX = camera.x * 0.25 + index * 72 + (index % 2) * 30;
-    const cloudY = camera.y * 0.08 + 18 + index * 8;
-    drawCloud(cloudX, cloudY);
-  }
-}
-
-function drawParallax() {
-  const horizonY = world.height - 88;
-
-  ctx.fillStyle = "#4f7b70";
-  for (let index = 0; index < 9; index += 1) {
-    const baseX = index * 70 - (camera.x * 0.25) % 70;
-    drawHill(baseX, horizonY + 16, 62, 28);
-  }
-
-  ctx.fillStyle = "#355748";
-  for (let index = 0; index < 7; index += 1) {
-    const baseX = index * 94 - (camera.x * 0.42) % 94;
-    drawHill(baseX, horizonY + 30, 80, 40);
-  }
-}
-
-function drawTiles() {
-  levelState.solids.forEach((tile) => {
-    const topColor = tile.y > world.height - TILE * 3 ? "#557b53" : "#987654";
-    const sideColor = tile.y > world.height - TILE * 3 ? "#355c37" : "#6d4a32";
-    drawBlock(tile.x, tile.y, topColor, sideColor);
-  });
-
-  levelState.spikes.forEach((spike) => {
-    ctx.fillStyle = "#d8ddd2";
-    ctx.beginPath();
-    ctx.moveTo(spike.x, spike.y + spike.height);
-    ctx.lineTo(spike.x + TILE / 2, spike.y);
-    ctx.lineTo(spike.x + TILE, spike.y + spike.height);
-    ctx.fill();
-    ctx.fillStyle = "#7f8b8c";
-    ctx.fillRect(spike.x, spike.y + spike.height - 2, TILE, 2);
-  });
-}
-
-function drawJumpPads() {
-  levelState.jumpPads.forEach((pad) => {
-    const bounce = Math.sin(pad.bounce * Math.PI) * 3;
-    ctx.fillStyle = "#5d486b";
-    ctx.fillRect(pad.x, pad.y + 2, TILE, 4);
-    ctx.fillStyle = "#f8d26b";
-    ctx.fillRect(pad.x + 2, pad.y - bounce, TILE - 4, 3);
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(pad.x + 5, pad.y - 1 - bounce, 6, 1);
-  });
-}
-
-function drawBeacons() {
-  levelState.beacons.forEach((beacon) => {
-    const flameLift = Math.sin(beacon.glow) * 2;
-    ctx.fillStyle = "#76543a";
-    ctx.fillRect(beacon.x + 5, beacon.y + 8, 4, 16);
-    ctx.fillStyle = beacon.active ? "#ffe59a" : "#8b7052";
-    ctx.fillRect(beacon.x + 2, beacon.y + 6, 10, 3);
-    ctx.fillStyle = beacon.active ? "#fffbdd" : "#d3b48a";
-    ctx.fillRect(beacon.x + 4, beacon.y + 1 - flameLift, 6, 7);
-    ctx.fillStyle = beacon.active ? "rgba(248, 210, 107, 0.22)" : "rgba(139, 112, 82, 0.15)";
-    ctx.fillRect(beacon.x - 3, beacon.y - 4, 20, 30);
-  });
-}
-
-function drawCrystals() {
-  levelState.crystals.forEach((crystal) => {
-    if (crystal.collected) {
-      return;
-    }
-
-    const bobOffset = Math.sin(crystal.bob) * 2;
-    ctx.fillStyle = "#85f7ff";
-    ctx.fillRect(crystal.x + 2, crystal.y - bobOffset, 4, 8);
-    ctx.fillRect(crystal.x, crystal.y + 2 - bobOffset, 8, 4);
-    ctx.fillStyle = "#d9ffff";
-    ctx.fillRect(crystal.x + 3, crystal.y + 1 - bobOffset, 2, 2);
-  });
-}
-
-function drawExit() {
-  const exitActive = player.crystals === totalCrystals;
-  const auraWidth = 22 + Math.sin(levelState.exit.pulse) * 4;
-  ctx.fillStyle = exitActive ? "#f7eb8a" : "#8b7052";
-  ctx.fillRect(levelState.exit.x + 4, levelState.exit.y, 8, 32);
-  ctx.fillStyle = exitActive ? "#82f0ff" : "#473528";
-  ctx.fillRect(levelState.exit.x, levelState.exit.y + 4, 16, 24);
-  if (exitActive) {
-    ctx.fillStyle = "rgba(130, 240, 255, 0.24)";
-    ctx.fillRect(levelState.exit.x - (auraWidth - 16) / 2, levelState.exit.y, auraWidth, 32);
-  }
-}
-
-function drawEnemies() {
-  levelState.enemies.forEach((enemy) => {
-    if (enemy.defeated) {
-      return;
-    }
-
-    ctx.fillStyle = "#6b2f50";
-    ctx.fillRect(enemy.x + 2, enemy.y + 2, 10, 10);
-    ctx.fillStyle = "#ef9f8f";
-    ctx.fillRect(enemy.x + 4, enemy.y + 4, 6, 4);
-    ctx.fillStyle = "#181818";
-    ctx.fillRect(enemy.x + 4, enemy.y + 10, 2, 2);
-    ctx.fillRect(enemy.x + 8, enemy.y + 10, 2, 2);
-    ctx.fillRect(enemy.x + (enemy.velocityX > 0 ? 10 : 2), enemy.y + 6, 2, 2);
-  });
-}
-
-function drawParticles() {
-  particles.forEach((particle) => {
-    ctx.globalAlpha = Math.min(1, particle.life / 12);
-    ctx.fillStyle = particle.color;
-    ctx.fillRect(particle.x, particle.y, particle.size, particle.size);
-  });
-  ctx.globalAlpha = 1;
-}
-
-function drawPlayer() {
-  const blink = player.hurtTimer > 0 && Math.floor(player.hurtTimer / 4) % 2 === 0;
-  if (blink) {
-    return;
-  }
-
-  if (player.dashTimer > 0) {
-    ctx.fillStyle = "rgba(255, 229, 154, 0.35)";
-    ctx.fillRect(player.x - player.facing * 4, player.y + 3, 8, 8);
-  }
-
-  ctx.fillStyle = "#294c60";
-  ctx.fillRect(player.x + 3, player.y + 2, 6, 6);
-  ctx.fillStyle = "#ffcf99";
-  ctx.fillRect(player.x + 4, player.y + 4, 4, 4);
-  ctx.fillStyle = "#d26b3b";
-  ctx.fillRect(player.x + 2, player.y + 8, 8, 4);
-  ctx.fillStyle = "#263f68";
-  ctx.fillRect(player.x + 2, player.y + 12, 3, 2);
-  ctx.fillRect(player.x + 7, player.y + 12, 3, 2);
-  ctx.fillStyle = "#101010";
-  ctx.fillRect(player.x + (player.facing > 0 ? 7 : 5), player.y + 5, 1, 1);
-
-  if (player.canDash && player.dashCooldown <= 0) {
-    ctx.fillStyle = "#ffe59a";
-    ctx.fillRect(player.x + 1, player.y + 6, 1, 1);
-    ctx.fillRect(player.x + 10, player.y + 3, 1, 1);
-  }
-}
-
-function drawBlock(x, y, topColor, sideColor) {
-  ctx.fillStyle = sideColor;
-  ctx.fillRect(x, y, TILE, TILE);
-  ctx.fillStyle = topColor;
-  ctx.fillRect(x, y, TILE, 4);
-  ctx.fillStyle = "rgba(255,255,255,0.08)";
-  ctx.fillRect(x + 2, y + 6, 4, 2);
-  ctx.fillRect(x + 10, y + 10, 3, 2);
-}
-
-function drawCloud(x, y) {
-  ctx.fillStyle = "rgba(255, 255, 255, 0.75)";
-  ctx.fillRect(x, y, 18, 6);
-  ctx.fillRect(x + 5, y - 4, 14, 6);
-  ctx.fillRect(x + 12, y + 2, 14, 5);
-}
-
-function drawHill(x, y, width, height) {
-  ctx.beginPath();
-  ctx.moveTo(x, y);
-  ctx.quadraticCurveTo(x + width / 2, y - height, x + width, y);
-  ctx.lineTo(x + width, world.height);
-  ctx.lineTo(x, world.height);
-  ctx.closePath();
-  ctx.fill();
-}
-
-function getSolidCollisions(rect) {
-  return levelState.solids.filter((tile) => intersects(rect, tile));
+  camera.x += (targetX - camera.x) * 0.08 * delta
+  camera.y += (targetY - camera.y) * 0.06 * delta
 }
 
 function spawnParticles(x, y, count, palette, speed, gravity) {
   for (let index = 0; index < count; index += 1) {
-    const angle = Math.random() * Math.PI * 2;
-    const magnitude = Math.random() * speed;
+    const angle = Math.random() * Math.PI * 2
+    const magnitude = Math.random() * speed
+
     particles.push({
       x,
       y,
       velocityX: Math.cos(angle) * magnitude,
       velocityY: Math.sin(angle) * magnitude - speed * 0.35,
       gravity,
-      life: 14 + Math.random() * 16,
+      life: 12 + Math.random() * 14,
       size: 1 + Math.random() * 2,
       color: palette[Math.floor(Math.random() * palette.length)]
-    });
+    })
   }
 }
 
@@ -1004,111 +1666,446 @@ function spawnTrailParticle() {
     life: 8 + Math.random() * 4,
     size: 2,
     color: Math.random() > 0.5 ? "#ffe59a" : "#ffffff"
-  });
+  })
 }
 
-function formatTime(totalSeconds) {
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = Math.floor(totalSeconds % 60);
-  const tenths = Math.floor((totalSeconds * 10) % 10);
-  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}.${tenths}`;
+function updateParticles(delta) {
+  for (let index = particles.length - 1; index >= 0; index -= 1) {
+    const particle = particles[index]
+    particle.life -= delta
+    particle.x += particle.velocityX * delta
+    particle.y += particle.velocityY * delta
+    particle.velocityY += particle.gravity * delta
+
+    if (particle.life <= 0) {
+      particles.splice(index, 1)
+    }
+  }
 }
 
-function queueJump() {
-  if (!gameRunning) {
-    return;
+function render() {
+  const shakeX = state.screenShake > 0 ? (Math.random() - 0.5) * state.screenShake : 0
+  const shakeY = state.screenShake > 0 ? (Math.random() - 0.5) * state.screenShake : 0
+
+  ctx.save()
+  ctx.clearRect(0, 0, canvas.width, canvas.height)
+  ctx.translate(-camera.x + shakeX, -camera.y + shakeY)
+
+  drawSky()
+  drawParallax()
+  drawTiles()
+  drawJumpPads()
+  drawExit()
+  drawBeacons()
+  drawCrystals()
+  drawEnemies()
+  drawBoss()
+  drawProjectiles()
+  drawMeleeBursts()
+  drawParticles()
+  drawPlayer()
+
+  ctx.restore()
+}
+
+function drawSky() {
+  const palette = getCurrentPalette()
+  const gradient = ctx.createLinearGradient(0, camera.y, 0, camera.y + canvas.height)
+  gradient.addColorStop(0, palette.skyTop)
+  gradient.addColorStop(1, palette.skyBottom)
+  ctx.fillStyle = gradient
+  ctx.fillRect(camera.x, camera.y, canvas.width, canvas.height)
+
+  for (let index = 0; index < 5; index += 1) {
+    const cloudX = camera.x * 0.25 + index * 88 + (index % 2) * 30
+    const cloudY = camera.y * 0.08 + 18 + index * 9
+    drawCloud(cloudX, cloudY)
+  }
+}
+
+function drawParallax() {
+  const palette = getCurrentPalette()
+  const horizonY = state.currentLevel.height - 88
+
+  ctx.fillStyle = palette.hillBack
+  for (let index = 0; index < 9; index += 1) {
+    const baseX = index * 70 - (camera.x * 0.25) % 70
+    drawHill(baseX, horizonY + 16, 62, 28)
   }
 
-  player.jumpBuffer = JUMP_BUFFER_FRAMES;
+  ctx.fillStyle = palette.hillFront
+  for (let index = 0; index < 7; index += 1) {
+    const baseX = index * 94 - (camera.x * 0.42) % 94
+    drawHill(baseX, horizonY + 30, 80, 40)
+  }
 }
 
-function intersects(a, b) {
-  return (
-    a.x < b.x + b.width &&
-    a.x + a.width > b.x &&
-    a.y < b.y + b.height &&
-    a.y + a.height > b.y
-  );
+function drawTiles() {
+  const palette = getCurrentPalette()
+
+  state.currentLevel.solids.forEach((tile) => {
+    drawBlock(tile.x, tile.y, palette.tileTop, palette.tileSide)
+  })
+
+  state.currentLevel.spikes.forEach((spike) => {
+    ctx.fillStyle = "#d8ddd2"
+    ctx.beginPath()
+    ctx.moveTo(spike.x, spike.y + spike.height)
+    ctx.lineTo(spike.x + TILE / 2, spike.y)
+    ctx.lineTo(spike.x + TILE, spike.y + spike.height)
+    ctx.fill()
+    ctx.fillStyle = "#7f8b8c"
+    ctx.fillRect(spike.x, spike.y + spike.height - 2, TILE, 2)
+  })
 }
 
-function clamp(value, min, max) {
-  return Math.max(min, Math.min(max, value));
+function drawJumpPads() {
+  state.currentLevel.jumpPads.forEach((pad) => {
+    const bounce = Math.sin(pad.bounce * Math.PI) * 3
+    ctx.fillStyle = "#5d486b"
+    ctx.fillRect(pad.x, pad.y + 2, TILE, 4)
+    ctx.fillStyle = "#f8d26b"
+    ctx.fillRect(pad.x + 2, pad.y - bounce, TILE - 4, 3)
+    ctx.fillStyle = "#ffffff"
+    ctx.fillRect(pad.x + 5, pad.y - 1 - bounce, 6, 1)
+  })
 }
 
-function setKeyState(event, pressed) {
-  const { code } = event;
-
-  if (code === "ArrowLeft" || code === "KeyA") {
-    keys.left = pressed;
+function drawExit() {
+  if (!state.currentLevel.exit) {
+    return
   }
 
-  if (code === "ArrowRight" || code === "KeyD") {
-    keys.right = pressed;
+  const exitActive = state.totalCrystals === 0 || player.crystals >= state.totalCrystals
+  const auraWidth = 24 + Math.sin(state.currentLevel.exit.pulse) * 4
+
+  ctx.fillStyle = exitActive ? "#f7eb8a" : "#8b7052"
+  ctx.fillRect(state.currentLevel.exit.x + 4, state.currentLevel.exit.y, 8, 32)
+  ctx.fillStyle = exitActive ? "#82f0ff" : "#473528"
+  ctx.fillRect(state.currentLevel.exit.x, state.currentLevel.exit.y + 4, 16, 24)
+
+  if (exitActive) {
+    ctx.fillStyle = "rgba(130, 240, 255, 0.24)"
+    ctx.fillRect(state.currentLevel.exit.x - (auraWidth - 16) / 2, state.currentLevel.exit.y, auraWidth, 32)
+  }
+}
+
+function drawBeacons() {
+  state.currentLevel.beacons.forEach((beacon) => {
+    const flameLift = Math.sin(beacon.glow) * 2
+    ctx.fillStyle = "#76543a"
+    ctx.fillRect(beacon.x + 5, beacon.y + 8, 4, 16)
+    ctx.fillStyle = beacon.active ? "#ffe59a" : "#8b7052"
+    ctx.fillRect(beacon.x + 2, beacon.y + 6, 10, 3)
+    ctx.fillStyle = beacon.active ? "#fffbdd" : "#d3b48a"
+    ctx.fillRect(beacon.x + 4, beacon.y + 1 - flameLift, 6, 7)
+    ctx.fillStyle = beacon.active ? "rgba(248, 210, 107, 0.22)" : "rgba(139, 112, 82, 0.15)"
+    ctx.fillRect(beacon.x - 3, beacon.y - 4, 20, 30)
+  })
+}
+
+function drawCrystals() {
+  state.currentLevel.crystals.forEach((crystal) => {
+    if (crystal.collected) {
+      return
+    }
+
+    const bobOffset = Math.sin(crystal.bob) * 2
+    ctx.fillStyle = "#85f7ff"
+    ctx.fillRect(crystal.x + 2, crystal.y - bobOffset, 4, 8)
+    ctx.fillRect(crystal.x, crystal.y + 2 - bobOffset, 8, 4)
+    ctx.fillStyle = "#d9ffff"
+    ctx.fillRect(crystal.x + 3, crystal.y + 1 - bobOffset, 2, 2)
+  })
+}
+
+function drawEnemies() {
+  state.currentLevel.enemies.forEach((enemy) => {
+    if (enemy.dead) {
+      return
+    }
+
+    ctx.fillStyle = "#6b2f50"
+    ctx.fillRect(enemy.x + 2, enemy.y + 2, 10, 10)
+    ctx.fillStyle = "#ef9f8f"
+    ctx.fillRect(enemy.x + 4, enemy.y + 4, 6, 4)
+    ctx.fillStyle = "#181818"
+    ctx.fillRect(enemy.x + 4, enemy.y + 10, 2, 2)
+    ctx.fillRect(enemy.x + 8, enemy.y + 10, 2, 2)
+    ctx.fillRect(enemy.x + (enemy.velocityX > 0 ? 10 : 2), enemy.y + 6, 2, 2)
+  })
+}
+
+function drawBoss() {
+  const boss = state.boss
+  if (!boss || boss.health <= 0) {
+    return
   }
 
-  if (code === "ArrowUp" || code === "KeyW" || code === "Space") {
-    if (pressed) {
-      queueJump();
+  const flash = boss.flashTimer > 0
+  ctx.fillStyle = flash ? "#fff7f2" : "#742f53"
+  ctx.fillRect(boss.x + 4, boss.y + 4, 22, 20)
+  ctx.fillStyle = "#ef9f8f"
+  ctx.fillRect(boss.x + 8, boss.y + 8, 14, 7)
+  ctx.fillStyle = boss.phase === 2 ? "#ffdd7a" : "#7af5ff"
+  ctx.fillRect(boss.x + 12, boss.y + 12, 6, 6)
+  ctx.fillStyle = "#1b1b1b"
+  ctx.fillRect(boss.x + (boss.facing > 0 ? 20 : 8), boss.y + 16, 3, 2)
+
+  if (boss.attackMode === "windup") {
+    ctx.fillStyle = "rgba(255, 221, 122, 0.25)"
+    ctx.fillRect(boss.x - 4, boss.y - 4, boss.width + 8, boss.height + 8)
+  }
+}
+
+function drawProjectiles() {
+  projectiles.forEach((projectile) => {
+    if (projectile.kind === "blast") {
+      ctx.fillStyle = "#7af5ff"
+      ctx.fillRect(projectile.x, projectile.y, projectile.width, projectile.height)
+      ctx.fillStyle = "#ffffff"
+      ctx.fillRect(projectile.x + 1, projectile.y + 1, projectile.width - 2, projectile.height - 2)
+      return
+    }
+
+    if (projectile.kind === "orb") {
+      ctx.fillStyle = "#f2779d"
+      ctx.fillRect(projectile.x, projectile.y, projectile.width, projectile.height)
+      ctx.fillStyle = "#ffffff"
+      ctx.fillRect(projectile.x + 2, projectile.y + 2, 2, 2)
+      return
+    }
+
+    ctx.fillStyle = "#f8d26b"
+    ctx.fillRect(projectile.x, projectile.y, projectile.width, projectile.height)
+    ctx.fillStyle = "#ffffff"
+    ctx.fillRect(projectile.x + 2, projectile.y + 1, projectile.width - 4, 1)
+  })
+}
+
+function drawMeleeBursts() {
+  meleeBursts.forEach((burst) => {
+    ctx.globalAlpha = Math.min(1, burst.life / 7) * 0.65
+    ctx.fillStyle = "#ffe59a"
+    ctx.fillRect(burst.x, burst.y + 4, burst.width, 4)
+    ctx.fillStyle = "#ffffff"
+    if (burst.direction > 0) {
+      ctx.fillRect(burst.x + burst.width - 5, burst.y + 2, 4, burst.height - 4)
+    } else {
+      ctx.fillRect(burst.x + 1, burst.y + 2, 4, burst.height - 4)
+    }
+    ctx.globalAlpha = 1
+  })
+}
+
+function drawParticles() {
+  particles.forEach((particle) => {
+    ctx.globalAlpha = Math.min(1, particle.life / 12)
+    ctx.fillStyle = particle.color
+    ctx.fillRect(particle.x, particle.y, particle.size, particle.size)
+  })
+
+  ctx.globalAlpha = 1
+}
+
+function drawPlayer() {
+  const blink = player.hurtTimer > 0 && Math.floor(player.hurtTimer / 4) % 2 === 0
+  if (blink) {
+    return
+  }
+
+  if (player.dashTimer > 0) {
+    ctx.fillStyle = "rgba(255, 229, 154, 0.35)"
+    ctx.fillRect(player.x - player.facing * 4, player.y + 3, 8, 8)
+  }
+
+  if (player.isGuarding) {
+    ctx.fillStyle = "rgba(122, 245, 255, 0.22)"
+    ctx.fillRect(player.x - 3, player.y - 2, player.width + 6, player.height + 4)
+  }
+
+  ctx.fillStyle = "#294c60"
+  ctx.fillRect(player.x + 3, player.y + 2, 6, 6)
+  ctx.fillStyle = "#ffcf99"
+  ctx.fillRect(player.x + 4, player.y + 4, 4, 4)
+  ctx.fillStyle = "#d26b3b"
+  ctx.fillRect(player.x + 2, player.y + 8, 8, 4)
+  ctx.fillStyle = "#263f68"
+  ctx.fillRect(player.x + 2, player.y + 12, 3, 2)
+  ctx.fillRect(player.x + 7, player.y + 12, 3, 2)
+  ctx.fillStyle = "#101010"
+  ctx.fillRect(player.x + (player.facing > 0 ? 7 : 5), player.y + 5, 1, 1)
+
+  if (player.attackPoseTimer > 0) {
+    ctx.fillStyle = "#ffe59a"
+    if (player.facing > 0) {
+      ctx.fillRect(player.x + 10, player.y + 8, 4, 2)
+    } else {
+      ctx.fillRect(player.x - 2, player.y + 8, 4, 2)
     }
   }
 
-  if ((code === "ShiftLeft" || code === "ShiftRight" || code === "KeyK") && pressed) {
-    attemptDash();
+  if (player.canDash && player.dashCooldown <= 0) {
+    ctx.fillStyle = "#ffe59a"
+    ctx.fillRect(player.x + 1, player.y + 6, 1, 1)
+    ctx.fillRect(player.x + 10, player.y + 3, 1, 1)
+  }
+}
+
+function drawBlock(x, y, topColor, sideColor) {
+  ctx.fillStyle = sideColor
+  ctx.fillRect(x, y, TILE, TILE)
+  ctx.fillStyle = topColor
+  ctx.fillRect(x, y, TILE, 4)
+  ctx.fillStyle = "rgba(255,255,255,0.08)"
+  ctx.fillRect(x + 2, y + 6, 4, 2)
+  ctx.fillRect(x + 10, y + 10, 3, 2)
+}
+
+function drawCloud(x, y) {
+  ctx.fillStyle = "rgba(255, 255, 255, 0.72)"
+  ctx.fillRect(x, y, 18, 6)
+  ctx.fillRect(x + 5, y - 4, 14, 6)
+  ctx.fillRect(x + 12, y + 2, 14, 5)
+}
+
+function drawHill(x, y, width, height) {
+  ctx.beginPath()
+  ctx.moveTo(x, y)
+  ctx.quadraticCurveTo(x + width / 2, y - height, x + width, y)
+  ctx.lineTo(x + width, state.currentLevel.height)
+  ctx.lineTo(x, state.currentLevel.height)
+  ctx.closePath()
+  ctx.fill()
+}
+
+function formatTime(totalSeconds) {
+  const minutes = Math.floor(totalSeconds / 60)
+  const seconds = Math.floor(totalSeconds % 60)
+  const tenths = Math.floor((totalSeconds * 10) % 10)
+  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}.${tenths}`
+}
+
+function setKeyState(event, pressed) {
+  const { code } = event
+
+  if (code === "ArrowLeft" || code === "KeyA") {
+    input.left = pressed
+  }
+
+  if (code === "ArrowRight" || code === "KeyD") {
+    input.right = pressed
+  }
+
+  if (code === "KeyF") {
+    input.guard = pressed
+  }
+
+  if ((code === "ArrowUp" || code === "KeyW" || code === "Space") && pressed) {
+    queueJump()
+  }
+
+  if ((code === "ShiftLeft" || code === "ShiftRight") && pressed) {
+    attemptDash()
+  }
+
+  if (code === "KeyJ" && pressed) {
+    performSlash()
+  }
+
+  if (code === "KeyL" && pressed) {
+    castBlast()
   }
 
   if (code === "KeyR" && pressed) {
-    startGame();
+    handleOverlayAction()
   }
 }
 
 window.addEventListener("keydown", (event) => {
-  if (["ArrowLeft", "ArrowRight", "ArrowUp", "Space", "ShiftLeft", "ShiftRight"].includes(event.code)) {
-    event.preventDefault();
+  if (
+    [
+      "ArrowLeft",
+      "ArrowRight",
+      "ArrowUp",
+      "Space",
+      "ShiftLeft",
+      "ShiftRight",
+      "KeyF"
+    ].includes(event.code)
+  ) {
+    event.preventDefault()
   }
-  setKeyState(event, true);
-});
+
+  ensureAudio()
+  setKeyState(event, true)
+})
 
 window.addEventListener("keyup", (event) => {
-  setKeyState(event, false);
-});
+  setKeyState(event, false)
+})
+
+window.addEventListener("blur", () => {
+  input.left = false
+  input.right = false
+  input.guard = false
+})
 
 overlayButtonEl.addEventListener("click", () => {
-  startGame();
-});
+  handleOverlayAction()
+})
 
 touchButtons.forEach((button) => {
-  const action = button.dataset.action;
+  const action = button.dataset.action
 
   const start = (event) => {
-    event.preventDefault();
-    button.classList.add("active");
+    event.preventDefault()
+    ensureAudio()
+    button.classList.add("active")
 
     if (action === "left") {
-      keys.left = true;
+      input.left = true
     } else if (action === "right") {
-      keys.right = true;
+      input.right = true
     } else if (action === "jump") {
-      queueJump();
+      queueJump()
     } else if (action === "dash") {
-      attemptDash();
+      attemptDash()
+    } else if (action === "slash") {
+      performSlash()
+    } else if (action === "blast") {
+      castBlast()
+    } else if (action === "guard") {
+      input.guard = true
     }
-  };
+  }
 
   const end = (event) => {
-    event.preventDefault();
-    button.classList.remove("active");
+    event.preventDefault()
+    button.classList.remove("active")
 
     if (action === "left") {
-      keys.left = false;
+      input.left = false
     } else if (action === "right") {
-      keys.right = false;
+      input.right = false
+    } else if (action === "guard") {
+      input.guard = false
     }
-  };
+  }
 
-  button.addEventListener("pointerdown", start);
-  button.addEventListener("pointerup", end);
-  button.addEventListener("pointerleave", end);
-  button.addEventListener("pointercancel", end);
-});
+  button.addEventListener("pointerdown", start)
+  button.addEventListener("pointerup", end)
+  button.addEventListener("pointerleave", end)
+  button.addEventListener("pointercancel", end)
+})
 
-resetGame();
+loadLevel(0, true)
+state.overlayMode = "start"
+setOverlay(
+  "Vuot qua ba man va danh bai boss cuoi",
+  "Ban co the chem, ban cau nang luong, dash tren khong va giu the gong de doi noi luc lay mau truoc tran boss.",
+  "Bat dau hanh trinh",
+  true
+)
+refreshHud()
+render()

@@ -20,6 +20,10 @@ const overlayEl = document.getElementById("overlay")
 const overlayTitleEl = document.getElementById("overlayTitle")
 const overlayTextEl = document.getElementById("overlayText")
 const overlayButtonEl = document.getElementById("overlayButton")
+const gamePanelEl = document.querySelector(".game-panel")
+const fullscreenButtonEl = document.getElementById("fullscreenButton")
+const rotateHintEl = document.getElementById("rotateHint")
+const rotateFullscreenButtonEl = document.getElementById("rotateFullscreenButton")
 const touchButtons = document.querySelectorAll(".touch-btn")
 
 const TILE = 16
@@ -588,6 +592,97 @@ function playWinSound() {
 function playLoseSound() {
   playTone(260, 0.14, { slideTo: 180, volume: 0.05, type: "square" })
   playTone(180, 0.18, { slideTo: 90, volume: 0.05, type: "square", delay: 0.12 })
+}
+
+function isProbablyMobile() {
+  return (
+    window.matchMedia("(max-width: 900px)").matches &&
+    (window.matchMedia("(pointer: coarse)").matches || navigator.maxTouchPoints > 0)
+  )
+}
+
+function isPortraitOrientation() {
+  return window.matchMedia("(orientation: portrait)").matches
+}
+
+function updateFullscreenButtonLabel() {
+  const isActive =
+    document.fullscreenElement === gamePanelEl ||
+    (gamePanelEl.classList.contains("is-fullscreen") && !document.fullscreenElement)
+  const label = isActive ? "Thoat toan man hinh" : "Toan man hinh"
+
+  fullscreenButtonEl.textContent = label
+  rotateFullscreenButtonEl.textContent = isActive ? "Thoat toan man hinh" : "Vao toan man hinh"
+}
+
+function updateMobileLayoutState() {
+  const isMobile = isProbablyMobile()
+  const shouldRotate = isMobile && isPortraitOrientation()
+
+  document.body.classList.toggle("mobile-device", isMobile)
+  document.body.classList.toggle("mobile-portrait", shouldRotate)
+  rotateHintEl.classList.toggle("hidden", !shouldRotate)
+}
+
+async function lockLandscapeIfPossible() {
+  if (!isProbablyMobile()) {
+    return
+  }
+
+  try {
+    if (screen.orientation && screen.orientation.lock) {
+      await screen.orientation.lock("landscape")
+    }
+  } catch (error) {
+    // Some browsers require fullscreen first or do not support orientation lock.
+  }
+}
+
+function unlockLandscapeIfPossible() {
+  try {
+    if (screen.orientation && screen.orientation.unlock) {
+      screen.orientation.unlock()
+    }
+  } catch (error) {
+    // Ignore unlock failures; many mobile browsers simply do not expose this API.
+  }
+}
+
+async function toggleFullscreenMode() {
+  ensureAudio()
+
+  const pseudoFullscreen =
+    gamePanelEl.classList.contains("is-fullscreen") && document.fullscreenElement !== gamePanelEl
+
+  if (document.fullscreenElement === gamePanelEl || pseudoFullscreen) {
+    if (document.fullscreenElement === gamePanelEl && document.exitFullscreen) {
+      try {
+        await document.exitFullscreen()
+      } catch (error) {
+        // Fall back to CSS-only fullscreen state below.
+      }
+    }
+
+    gamePanelEl.classList.remove("is-fullscreen")
+    unlockLandscapeIfPossible()
+    updateFullscreenButtonLabel()
+    updateMobileLayoutState()
+    return
+  }
+
+  if (gamePanelEl.requestFullscreen) {
+    try {
+      await gamePanelEl.requestFullscreen({ navigationUI: "hide" })
+    } catch (error) {
+      gamePanelEl.classList.add("is-fullscreen")
+    }
+  } else {
+    gamePanelEl.classList.add("is-fullscreen")
+  }
+
+  await lockLandscapeIfPossible()
+  updateFullscreenButtonLabel()
+  updateMobileLayoutState()
 }
 
 function startCampaign() {
@@ -2051,8 +2146,40 @@ window.addEventListener("blur", () => {
   input.guard = false
 })
 
+window.addEventListener("resize", () => {
+  updateMobileLayoutState()
+  updateFullscreenButtonLabel()
+})
+
+window.addEventListener("orientationchange", () => {
+  updateMobileLayoutState()
+  updateFullscreenButtonLabel()
+})
+
+document.addEventListener("fullscreenchange", () => {
+  const isNativeFullscreen = document.fullscreenElement === gamePanelEl
+  gamePanelEl.classList.toggle("is-fullscreen", isNativeFullscreen)
+
+  if (isNativeFullscreen) {
+    lockLandscapeIfPossible()
+  } else {
+    unlockLandscapeIfPossible()
+  }
+
+  updateFullscreenButtonLabel()
+  updateMobileLayoutState()
+})
+
 overlayButtonEl.addEventListener("click", () => {
   handleOverlayAction()
+})
+
+fullscreenButtonEl.addEventListener("click", () => {
+  toggleFullscreenMode()
+})
+
+rotateFullscreenButtonEl.addEventListener("click", () => {
+  toggleFullscreenMode()
 })
 
 touchButtons.forEach((button) => {
@@ -2107,5 +2234,7 @@ setOverlay(
   "Bat dau hanh trinh",
   true
 )
+updateMobileLayoutState()
+updateFullscreenButtonLabel()
 refreshHud()
 render()

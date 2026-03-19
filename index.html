@@ -26,45 +26,45 @@
     </section>
 
     <section class="game-panel">
-      <div class="hud">
-        <div class="hud-item">
-          <span class="label">Man</span>
-          <strong id="levelValue">1</strong>
-        </div>
-        <div class="hud-item">
-          <span class="label">Tinh the</span>
-          <strong id="crystalCount">0 / 0</strong>
-        </div>
-        <div class="hud-item">
-          <span class="label">Dash</span>
-          <strong id="dashValue">San sang</strong>
-        </div>
-        <div class="hud-item">
-          <span class="label">Thoi gian</span>
-          <strong id="timeValue">00:00.0</strong>
-        </div>
-        <div class="hud-item hud-item--wide">
-          <span class="label">Mau</span>
-          <div class="meter">
-            <div class="meter-fill meter-fill--health" id="healthFill"></div>
-          </div>
-          <strong id="healthText">100 / 100</strong>
-        </div>
-        <div class="hud-item hud-item--wide">
-          <span class="label">Noi luc</span>
-          <div class="meter">
-            <div class="meter-fill meter-fill--spirit" id="spiritFill"></div>
-          </div>
-          <strong id="spiritText">50 / 100</strong>
-        </div>
-        <div class="hud-item hud-item--full">
-          <span class="label">Trang thai</span>
-          <strong id="statusText">San sang vao tan tich</strong>
-        </div>
-      </div>
-
       <div class="canvas-wrap">
+        <div class="hud">
+          <div class="hud-item">
+            <span class="label">Man</span>
+            <strong id="levelValue">1</strong>
+          </div>
+          <div class="hud-item">
+            <span class="label">Tinh the</span>
+            <strong id="crystalCount">0 / 0</strong>
+          </div>
+          <div class="hud-item">
+            <span class="label">Dash</span>
+            <strong id="dashValue">San sang</strong>
+          </div>
+          <div class="hud-item">
+            <span class="label">Thoi gian</span>
+            <strong id="timeValue">00:00.0</strong>
+          </div>
+          <div class="hud-item hud-item--wide">
+            <span class="label">Mau</span>
+            <div class="meter">
+              <div class="meter-fill meter-fill--health" id="healthFill"></div>
+            </div>
+            <strong id="healthText">100 / 100</strong>
+          </div>
+          <div class="hud-item hud-item--wide">
+            <span class="label">Noi luc</span>
+            <div class="meter">
+              <div class="meter-fill meter-fill--spirit" id="spiritFill"></div>
+            </div>
+            <strong id="spiritText">50 / 100</strong>
+          </div>
+          <div class="hud-item hud-item--full">
+            <span class="label">Trang thai</span>
+            <strong id="statusText">San sang vao tan tich</strong>
+          </div>
+        </div>
         <div class="stage-chip" id="stageChip">Man 1 - Sunken Gate</div>
+        <button class="fullscreen-toggle" id="fullscreenButton" type="button">Toan man hinh</button>
         <div class="boss-bar hidden" id="bossBar" aria-live="polite">
           <div class="boss-bar__top">
             <span id="bossName">Guardian Core</span>
@@ -83,6 +83,18 @@
               Ban co the chem, ban cau nang luong, dash tren khong va giu the gong de doi noi luc lay mau truoc tran boss.
             </p>
             <button id="overlayButton" type="button">Bat dau hanh trinh</button>
+          </div>
+        </div>
+        <div class="rotate-hint hidden" id="rotateHint" aria-live="polite">
+          <div class="rotate-hint__card">
+            <p class="rotate-hint__icon">&#8635;</p>
+            <h3>Xoay ngang de choi</h3>
+            <p>
+              Tren dien thoai, game se choi tot nhat khi may dang nam ngang. Ban co the bam nut duoi day de vao toan man hinh roi xoay may.
+            </p>
+            <button class="fullscreen-toggle fullscreen-toggle--cta" id="rotateFullscreenButton" type="button">
+              Vao toan man hinh
+            </button>
           </div>
         </div>
       </div>
